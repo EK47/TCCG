@@ -16,6 +16,13 @@ Actor::~Actor()
     if( container ) delete container;
 }
 
+float Actor::getDistance( int cx, int cy ) const
+{
+    int dx = x - cx;
+    int dy = y - cy;
+    return sqrtf( dx*dx + dy*dy );
+}
+
 void Actor::render() const {
     TCODConsole::root->setChar(x,y,ch);
     TCODConsole::root->setCharForeground(x,y,col);

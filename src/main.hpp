@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <algorithm>
+#include <math.h>
 #include "../include/libtcod.hpp"
 class Actor;
 #include "destructible.hpp"

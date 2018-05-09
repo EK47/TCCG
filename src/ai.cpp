@@ -5,7 +5,7 @@
 
 // how many turns the monster chases the player
 // after losing his sight
-static const int TRACKING_TURNS=3;
+static const int TRACKING_TURNS = 6;
 
 MonsterAi::MonsterAi() : moveCount(0) {
 }

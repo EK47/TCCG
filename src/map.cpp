@@ -1,4 +1,3 @@
-#include <algorithm>
 #include "main.hpp"
 
 Map::Map( int width, int height ) : width( width ), height( height )
@@ -60,25 +59,25 @@ void Map::addMonster( int x, int y )
 {
     TCODRandom *rng = TCODRandom::getInstance();
     int val = rng -> getInt( 0, 100 );
-    if( val < 80 && val > 20 )
+    if( val < 70 )
     {
         Actor *orc = new Actor( x, y, 'o', "Orc", TCODColor::desaturatedGreen );
         orc -> destructible = new MonsterDestructible( 10, 0, "Dead Orc" );
         orc -> attacker = new Attacker( 3 );
         orc -> ai = new MonsterAi();
         engine.actors.push( orc );
-    } else if( val <= 20 && val > 1 )
+    } else if( val < 99 )
     {
         Actor *troll = new Actor( x, y, 'T', "Troll", TCODColor::darkerGreen );
         troll -> destructible = new MonsterDestructible( 16, 1, "Troll Carcass" );
         troll -> attacker = new Attacker( 4 );
         troll -> ai = new MonsterAi();
         engine.actors.push( troll );
-    } else if( val = 1 )
+    } else if( val = 100 )
     {
         Actor *demon = new Actor( x, y, 'D', "Demon", TCODColor::darkerRed );
-        demon -> destructible = new MonsterDestructible( 30, 2, "Scorched Flesh" );
-        demon -> attacker = new Attacker( 6 );
+        demon -> destructible = new MonsterDestructible( 25, 2, "Scorched Flesh" );
+        demon -> attacker = new Attacker( 4 );
         demon -> ai = new MonsterAi();
         engine.actors.push( demon );
     }
@@ -86,10 +85,27 @@ void Map::addMonster( int x, int y )
 
 void Map::addItem( int x, int y )
 {
-    Actor *healthPotion = new Actor( x, y, 15, "\'fresh\' bread", TCODColor ( 30, 175, 30 ) );
-    healthPotion -> blocks = false;
-    healthPotion -> pickable = new Healer( 8 );
-    engine.actors.push( healthPotion );
+    TCODRandom *rng = TCODRandom::getInstance();
+    int dice = rng -> getInt( 0, 100 );
+    if( dice < 70 )
+    {
+        Actor *healthPotion = new Actor( x, y, 15, "\'fresh\' bread", TCODColor ( 30, 175, 30 ) );
+        healthPotion -> blocks = false;
+        healthPotion -> pickable = new Healer( 8 );
+        engine.actors.push( healthPotion );
+    } else if( dice < 80 )
+    {
+        Actor *scrollOfLightningBolt = new Actor( x, y, 21, "Lightning Scroll", TCODColor::lightYellow );
+        scrollOfLightningBolt -> blocks = false;
+        scrollOfLightningBolt -> pickable = new LightningBolt( 5, 20 );
+        engine.actors.push( scrollOfLightningBolt );
+    } else if( dice < 90 )
+    {
+        Actor *scrollOfFireball = new Actor( x, y, 21, "Fireball Scroll", TCODColor::lightYellow );
+        scrollOfFireball -> blocks = false;
+        scrollOfFireball -> pickable = new Fireball( 3, 12 );
+        engine.actors.push( scrollOfFireball );
+    }
 }
 
 void Map::computeFov() {        // No matter what I do, this has to be a magic number
