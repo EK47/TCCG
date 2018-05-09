@@ -1,0 +1,5 @@
+
+The Death Chase element - On reaching 0 HP, you are not dead, but you are chased
+by death. You die once he reaches you. The only way to avoid your fate is to somehow
+get your HP back up to max.
+
