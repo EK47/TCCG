@@ -7,4 +7,8 @@ Programmed in C++, it uses SDL and the Doryen / libtcod library.
 
 This uses the Mozilla 2.0 License. 
 
-By: Ethan Kelly and Calvin Higdon
+Programmed by Ethan Kelly.
+
+Loosely based upon the works of Ethan Kelly.
+
+Creative Direction provided by Calvin Higdon.
