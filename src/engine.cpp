@@ -101,6 +101,7 @@ bool Engine::pickATile(int *x, int *y, float maxRange) {
 				}
 			}
 		}
+		&lastKey = TCODK_NONE;
 		TCODSystem::checkForEvent(TCOD_EVENT_KEY_PRESS|TCOD_EVENT_MOUSE,&lastKey,&mouse);
 		if ( map->isInFov(mouse.cx,mouse.cy)
 			&& ( maxRange == 0 || player->getDistance(mouse.cx,mouse.cy) <= maxRange )) {
