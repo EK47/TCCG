@@ -71,7 +71,7 @@ bool Fireball::use(Actor *owner, Actor *wearer) {
 		return false;
 	}
 	// burn everything in <range> (including player)
-	engine.gui->message(TCODColor::orange,"The fireball explodes, burning everything within %g tiles!",range);
+	engine.gui->message(TCODColor::orange,"It implodes, setting everything %g blocks around it on fire!",range);
 	for (Actor **iterator=engine.actors.begin();
 	    iterator != engine.actors.end(); iterator++) {
 		Actor *actor=*iterator;

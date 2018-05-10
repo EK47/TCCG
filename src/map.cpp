@@ -89,7 +89,7 @@ void Map::addItem( int x, int y )
     int dice = rng -> getInt( 0, 100 );
     if( dice < 70 )
     {
-        Actor *healthPotion = new Actor( x, y, 15, "\'fresh\' bread", TCODColor ( 30, 175, 30 ) );
+        Actor *healthPotion = new Actor( x, y, 15, "slice of \'fresh\' bread", TCODColor ( 30, 175, 30 ) );
         healthPotion -> blocks = false;
         healthPotion -> pickable = new Healer( 8 );
         engine.actors.push( healthPotion );
@@ -109,7 +109,7 @@ void Map::addItem( int x, int y )
 }
 
 void Map::computeFov() {        // No matter what I do, this has to be a magic number
-   map -> computeFov( engine.player -> x, engine.player -> y, 10, true, FOV_BASIC );
+   map -> computeFov( engine.player -> x, engine.player -> y, 10, true, FOV_SHADOW );
 }
 
 
