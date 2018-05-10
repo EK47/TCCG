@@ -103,7 +103,7 @@ void Map::addItem( int x, int y )
     {
         Actor *scrollOfFireball = new Actor( x, y, 21, "Fireball Scroll", TCODColor::lightYellow );
         scrollOfFireball -> blocks = false;
-        scrollOfFireball -> pickable = new Fireball( 3, 12 );
+        scrollOfFireball -> pickable = new Fireball( 9, 12 );
         engine.actors.push( scrollOfFireball );
     } else if( dice < 100 )
     {

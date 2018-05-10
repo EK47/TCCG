@@ -16,7 +16,7 @@ Engine::Engine( int screenWidth, int screenHeight ) : gameStatus( STARTUP ), scr
     player -> ai = new PlayerAi();
     player -> container = new Container( 26 );
     actors.push( player );
-    map = new Map( 80, 45 );
+    map = new Map( 80, 43 );
     gui = new Gui();
 
     gui->message( TCODColor::red, "Save us, Calvin!\n""You're our only hope!" );
