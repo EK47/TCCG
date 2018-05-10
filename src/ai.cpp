@@ -54,7 +54,6 @@ void PlayerAi::update(Actor *owner) {
 	int dx=0,dy=0;
     bool pause = false;
 	switch(engine.lastKey.vk) {
-        pause = false;
 		case TCODK_UP:
         case TCODK_KP8: dy=-1; break;
 
@@ -132,82 +131,80 @@ bool PlayerAi::moveOrAttack(Actor *owner, int targetx,int targety) {
 	return true;
 }
 
-void PlayerAi::handleActionKey( Actor *owner, int ascii )
-{
-    switch( ascii )
-    {
-        case 'g':
-        {
-            bool found = false;
-            for( Actor **iterator = engine.actors.begin(); iterator != engine.actors.end(); iterator++ )
-            {
-                Actor *actor = *iterator;
-                if( actor -> pickable && actor -> x == owner -> x && actor -> y == owner -> y )
-                {
-                    if( actor -> pickable -> pick( actor, owner ) )
-                    {
-                        found = true;
-                        engine.gui -> message( TCODColor::lightGrey, "You pick up the %s.", actor -> name);
-                        break;
-                    } else if( ! found )
-                    {
-                        found = true;
-                        engine.gui -> message( TCODColor::red, "Your inventory is full!" );
-                    }
-                }
-            }
-            if( ! found )
-            {
-                engine.gui -> message( TCODColor::lightGrey, "You try and pick up nothing.");
-            }
-            engine.gameStatus = Engine::NEW_TURN;
-        }
-        break;
-        case 'i':
-        {
-            Actor *actor = choseFromInventory( owner );
-            if( actor )
-            {
-                actor -> pickable -> use( actor, owner );
-                engine.gameStatus = Engine::NEW_TURN;
-            }
-        }
-    }
+void PlayerAi::handleActionKey(Actor *owner, int ascii) {
+	switch(ascii) {
+		case 'g' : // pickup item
+		{
+			bool found=false;
+			for (Actor **iterator=engine.actors.begin();
+				iterator != engine.actors.end(); iterator++) {
+				Actor *actor=*iterator;
+				if ( actor->pickable && actor->x == owner->x && actor->y == owner->y ) {
+					if (actor->pickable->pick(actor,owner)) {
+						found=true;
+						engine.gui->message(TCODColor::lightGrey,"You pick the %s.",
+							actor->name);
+						break;
+					} else if (! found) {
+						found=true;
+						engine.gui->message(TCODColor::red,"Your inventory is full.");
+					}
+				}
+			}
+			if (!found) {
+				engine.gui->message(TCODColor::lightGrey,"There's nothing here that you can pick.");
+			}
+			engine.gameStatus=Engine::NEW_TURN;
+		}
+		break;
+		case 'i' : // display inventory
+		{
+			Actor *actor=choseFromInventory(owner);
+			if ( actor ) {
+				actor->pickable->use(actor,owner);
+				engine.gameStatus=Engine::NEW_TURN;
+			}
+		}
+		break;
+	}
 }
 
-Actor *PlayerAi::choseFromInventory( Actor *owner )
-{
-    static const int INVENTORY_WIDTH = 50;
-    static const int INVENTORY_HEIGHT = 28;
-    static TCODConsole con( INVENTORY_WIDTH, INVENTORY_HEIGHT );
+Actor *PlayerAi::choseFromInventory(Actor *owner) {
+	static const int INVENTORY_WIDTH=50;
+	static const int INVENTORY_HEIGHT=28;
+	static TCODConsole con(INVENTORY_WIDTH,INVENTORY_HEIGHT);
 
-    con.setDefaultForeground( TCODColor( 200, 180, 50 ) );
-    con.printFrame( 0, 0, INVENTORY_WIDTH, INVENTORY_HEIGHT, true, TCOD_BKGND_DEFAULT, "inventory" );
+	// display the inventory frame
+	con.setDefaultForeground(TCODColor(200,180,50));
+	con.printFrame(0,0,INVENTORY_WIDTH,INVENTORY_HEIGHT,true,
+		TCOD_BKGND_DEFAULT,"inventory");
 
-    con.setDefaultForeground( TCODColor::white );
-    int shortcut = 'a';
-    int y = 1;
-    for (Actor **it=owner->container->inventory.begin(); it != owner->container->inventory.end(); it++)
-    {
-        Actor *actor=*it;
-        con.print(2,y,"(%c) %s", shortcut, actor->name);
-        y++;
-        shortcut++;
-    }
+	// display the items with their keyboard shortcut
+	con.setDefaultForeground(TCODColor::white);
+	int shortcut='a';
+	int y=1;
+	for (Actor **it=owner->container->inventory.begin();
+		it != owner->container->inventory.end(); it++) {
+		Actor *actor=*it;
+		con.print(2,y,"(%c) %s", shortcut, actor->name);
+		y++;
+		shortcut++;
+	}
 
-    TCODConsole::blit( &con, 0, 0, INVENTORY_WIDTH, INVENTORY_HEIGHT, TCODConsole::root, engine.screenWidth / 2 - INVENTORY_WIDTH / 2, engine.screenHeight / 2 - INVENTORY_HEIGHT / 2 );
-    TCODConsole::flush();
+	// blit the inventory console on the root console
+	TCODConsole::blit(&con, 0,0,INVENTORY_WIDTH,INVENTORY_HEIGHT,
+		TCODConsole::root, engine.screenWidth/2 - INVENTORY_WIDTH/2,
+		engine.screenHeight/2-INVENTORY_HEIGHT/2);
+	TCODConsole::flush();
 
-    TCOD_key_t key;
-    TCODSystem::waitForEvent( TCOD_EVENT_KEY_PRESS, &key, NULL, true );
-
-    if( key.vk == TCODK_CHAR )
-    {
-        int actorIndex = key.c - 'a';
-        if( actorIndex >= 0 && actorIndex < owner -> container -> inventory.size() )
-        {
-            return owner -> container -> inventory.get( actorIndex );
-        }
-    }
-    return NULL;
+	// wait for a key press
+	TCOD_key_t key;
+	TCODSystem::waitForEvent(TCOD_EVENT_KEY_PRESS,&key,NULL,true);
+	if ( key.vk == TCODK_CHAR ) {
+		int actorIndex=key.c - 'a';
+		if ( actorIndex >= 0 && actorIndex < owner->container->inventory.size() ) {
+			return owner->container->inventory.get(actorIndex);
+		}
+	}
+	return NULL;
 }
