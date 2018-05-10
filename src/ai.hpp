@@ -31,4 +31,14 @@ protected:
     int moveCount;
 };
 
+class ConfusedAi : public Ai
+{
+public:
+    ConfusedAi( int nbTurns, Ai *oldAi );
+    void update( Actor *owner );
+protected:
+    int nbTurns;
+    Ai *oldAi;
+};
+
 #endif

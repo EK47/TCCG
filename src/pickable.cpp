@@ -1,5 +1,17 @@
 #include "main.hpp"
 
+void Pickable::drop( Actor *owner, Actor *wearer )
+{
+    if( wearer -> container )
+    {
+        wearer -> container -> remove( owner );
+        engine.actors.push( owner );
+        owner -> x = wearer -> x;
+        owner -> y = wearer -> y;
+        engine.gui -> message( TCODColor::lightGrey, "%s drops a %s.", wearer -> name, owner -> name );
+    }
+}
+
 bool Pickable::use( Actor *owner, Actor *wearer )
 {
     if( wearer -> container )
@@ -67,7 +79,7 @@ Fireball::Fireball(float range, float damage)
 bool Fireball::use(Actor *owner, Actor *wearer) {
 	engine.gui->message(TCODColor::cyan, "Hover over a target and left click to fire!");
 	int x,y;
-	if (! engine.pickATile(&x, &y, 0)) {
+	if (! engine.pickATile(&x, &y, range ) ) {
 		return false;
 	}
 	// burn everything in <range> (including player)
@@ -83,4 +95,28 @@ bool Fireball::use(Actor *owner, Actor *wearer) {
 		}
 	}
 	return Pickable::use(owner,wearer);
+}
+
+Confuser::Confuser( int nbTurns, float range ) : nbTurns( nbTurns ), range( range )
+{
+
+}
+
+bool Confuser::use( Actor *owner, Actor *wearer )
+{
+    engine.gui -> message( TCODColor::cyan, "Left-click an enemy to confuse it\nor right-click to cancel.");
+    int x, y;
+    if( ! engine.pickATile( &x, &y, range ) )
+    {
+        return false;
+    }
+    Actor *actor = engine.getActor( x, y );
+    if( !actor )
+    {
+        return false;
+    }
+    Ai *confusedAi = new ConfusedAi( nbTurns, actor -> ai );
+    actor -> ai = confusedAi;
+    engine.gui -> message( TCODColor::lightGreen, "The eyes of the %s look empty,\nas it falls into a walking trance!", actor -> name );
+    return Pickable::use( owner, wearer );
 }

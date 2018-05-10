@@ -74,7 +74,7 @@ Actor *Engine::getClosestMonster( int x, int y, float range ) const
     for( Actor **iterator = actors.begin(); iterator != actors.end(); iterator++ )
     {
         Actor *actor = *iterator;
-        if( actor != player && actor -> destructible )
+        if( actor != player && actor -> destructible && ! actor -> destructible -> isDead() )
         {
             float distance = actor -> getDistance( x, y );
             if( distance < bestDistance && ( distance <= range || range == 0.0f ) )
@@ -87,6 +87,18 @@ Actor *Engine::getClosestMonster( int x, int y, float range ) const
     return closest;
 }
 
+Actor *Engine::getActor( int x, int y ) const
+{
+    for( Actor **iterator = actors.begin(); iterator != actors.end(); iterator++ )
+    {
+        Actor *actor = *iterator;
+        if( actor -> x == x && actor -> y == y && actor -> destructible && !actor -> destructible -> isDead() )
+        {
+            return actor;
+        }
+    }
+    return NULL;
+}
 
 bool Engine::pickATile(int *x, int *y, float maxRange) {
 	while ( !TCODConsole::isWindowClosed() ) {
