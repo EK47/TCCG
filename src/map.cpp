@@ -76,14 +76,14 @@ void Map::addMonster( int x, int y )
     } else if( val < 90 )
     {
         Actor *demon = new Actor( x, y, 'D', "Demon", TCODColor::darkerRed );
-        demon -> destructible = new MonsterDestructible( 25, 2, "Scorched Flesh" );
+        demon -> destructible = new MonsterDestructible( 25, 2, "Scorched Corpse" );
         demon -> attacker = new Attacker( 4 );
         demon -> ai = new MonsterAi();
         engine.actors.push( demon );
     } else if( val < 100 )
     {
         Actor *bob = new Actor( x, y, 'B', "Big Bob", TCODColor::darkBlue );
-        bob -> destructible = new MonsterDestructible( 30, 2, "Blubber" );
+        bob -> destructible = new MonsterDestructible( 30, 2, "Fatty Cadaver" );
         bob -> attacker = new Attacker( 5 );
         bob -> ai = new MonsterAi();
         engine.actors.push( bob );
@@ -195,8 +195,8 @@ void Map::render() const
         for( int y = 0; y < height; y++ )
         {
             if ( isInFov(x,y) ) {
-                TCODConsole::root->setCharForeground(x, y, isWall(x,y) ? visibleWall : visibleGround );
-            
+                TCODConsole::root->setCharForeground( x, y, isWall(x,y) ? visibleWall : visibleGround );
+                TCODConsole::root->setCharBackground( x, y, TCODColor( 20, 20, 20 ) );
                 if( isWall( x, y ) )
                 {
                     TCODConsole::root -> setChar( x, y, '#' );
@@ -209,6 +209,8 @@ void Map::render() const
             {
                 if ( isExplored(x, y) ) {
                     TCODConsole::root->setCharForeground(x, y, isWall(x,y) ? unseenWall : unseenGround );
+                    TCODConsole::root->setCharBackground( x, y, TCODColor( 10, 10, 10 ) );
+
                     if( isWall( x, y ) )
                     {
                         TCODConsole::root -> setChar( x, y, '#' );

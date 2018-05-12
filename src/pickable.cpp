@@ -82,6 +82,7 @@ bool Fireball::use(Actor *owner, Actor *wearer) {
 	if (! engine.pickATile(&x, &y, range * 2 ) ) {
 		return false;
 	}
+    
 	// burn everything in <range> (including player)
 	engine.gui->message(TCODColor::orange,"It implodes, setting everything %g blocks around it on fire!",range);
 	for (Actor **iterator=engine.actors.begin();

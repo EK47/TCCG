@@ -39,7 +39,7 @@ void Destructible::naturalHeal( Actor *owner, int turnSinceFight )
 
 void Destructible::die(Actor *owner) {
 	// transform the actor into a corpse!
-	owner->ch='%';
+	owner->ch='~';
 	owner->col=TCODColor::darkRed;	
 	owner->name=corpseName;
 	owner->blocks=false;

@@ -19,7 +19,7 @@ Engine::Engine( int screenWidth, int screenHeight ) : gameStatus( STARTUP ), scr
     map = new Map( 80, 42 );
     gui = new Gui();
 
-    gui->message( TCODColor::red, "Save us, Calvin!\n""You're our only hope!" );
+    gui->message( TCODColor::red, "Save us, Calvin! You're our only hope!" );
 }
 
 Engine::~Engine()
@@ -32,7 +32,8 @@ Engine::~Engine()
 void Engine::update() {
 	if ( gameStatus == STARTUP ) map->computeFov();
    	gameStatus=IDLE;
-    TCODSystem::checkForEvent(TCOD_EVENT_KEY_PRESS|TCOD_EVENT_MOUSE,&lastKey,&mouse);    player->update();
+    TCODSystem::checkForEvent(TCOD_EVENT_KEY_PRESS|TCOD_EVENT_MOUSE,&lastKey,&mouse);
+    player->update();
     if ( gameStatus == NEW_TURN ) {
 	    for (Actor **iterator=actors.begin(); iterator != actors.end();
 	        iterator++) {
@@ -109,7 +110,7 @@ bool Engine::pickATile(int *x, int *y, float maxRange) {
 				if ( map->isInFov( cx, cy )
 					&& ( maxRange == 0 || player->getDistance(cx,cy) <= maxRange) ) {
                     TCODColor col = TCODConsole::root->getCharBackground(cx,cy);
-					col = col * 1.2f;
+					col = col * 1.75f;
 					TCODConsole::root->setCharBackground( cx, cy, col);
 				}
 			}

@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <math.h>
 #include "../include/libtcod.hpp"
+#include "../include/boost/archive/text_iarchive.hpp"
+#include "../include/boost/archive/text_oarchive.hpp"
 class Actor;
 #include "destructible.hpp"
 #include "attacker.hpp"
