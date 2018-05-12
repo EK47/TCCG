@@ -3,3 +3,19 @@ The Death Chase element - On reaching 0 HP, you are not dead, but you are chased
 by death. You die once he reaches you. The only way to avoid your fate is to somehow
 get your HP back up to max.
 
+
+
+Fix the autoheal of other creatures
+
+Work on REXPaint art.
+
+Work on the line interpolation for the lightning
+spell, and the explosion effect for the fireball.
+
+Implement more creatures, potions, and maybe use
+the random potion / scroll name feature.
+
+Make a wait feature that goes until all health is
+restored, or until a creature is seen in FOV.
+
+Fix the magic number FOV problem :p

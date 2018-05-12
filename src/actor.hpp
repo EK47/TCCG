@@ -14,6 +14,7 @@ public:
     Ai *ai;
     Pickable *pickable;
     Container *container;
+    int turnSinceFight;
 
     Actor( int x, int y, int ch, const char *name, const TCODColor &col );
     ~Actor();

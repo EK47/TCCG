@@ -59,27 +59,34 @@ void Map::addMonster( int x, int y )
 {
     TCODRandom *rng = TCODRandom::getInstance();
     int val = rng -> getInt( 0, 100 );
-    if( val < 70 )
+    if( val < 60 )
     {
         Actor *orc = new Actor( x, y, 'o', "Orc", TCODColor::desaturatedGreen );
         orc -> destructible = new MonsterDestructible( 10, 0, "Dead Orc" );
         orc -> attacker = new Attacker( 3 );
         orc -> ai = new MonsterAi();
         engine.actors.push( orc );
-    } else if( val < 99 )
+    } else if( val < 80 )
     {
         Actor *troll = new Actor( x, y, 'T', "Troll", TCODColor::darkerGreen );
         troll -> destructible = new MonsterDestructible( 16, 1, "Troll Carcass" );
         troll -> attacker = new Attacker( 4 );
         troll -> ai = new MonsterAi();
         engine.actors.push( troll );
-    } else if( val = 100 )
+    } else if( val < 90 )
     {
         Actor *demon = new Actor( x, y, 'D', "Demon", TCODColor::darkerRed );
         demon -> destructible = new MonsterDestructible( 25, 2, "Scorched Flesh" );
         demon -> attacker = new Attacker( 4 );
         demon -> ai = new MonsterAi();
         engine.actors.push( demon );
+    } else if( val < 100 )
+    {
+        Actor *bob = new Actor( x, y, 'B', "Big Bob", TCODColor::darkBlue );
+        bob -> destructible = new MonsterDestructible( 30, 2, "Blubber" );
+        bob -> attacker = new Attacker( 5 );
+        bob -> ai = new MonsterAi();
+        engine.actors.push( bob );
     }
 }
 
@@ -87,25 +94,25 @@ void Map::addItem( int x, int y )
 {
     TCODRandom *rng = TCODRandom::getInstance();
     int dice = rng -> getInt( 0, 100 );
-    if( dice < 70 )
+    if( dice < 40 )
     {
         Actor *healthPotion = new Actor( x, y, 15, "slice of \'fresh\' bread", TCODColor ( 30, 175, 30 ) );
         healthPotion -> blocks = false;
         healthPotion -> pickable = new Healer( 8 );
         engine.actors.push( healthPotion );
-    } else if( dice < 80 )
+    } else if( dice < 45 )
     {
         Actor *scrollOfLightningBolt = new Actor( x, y, 21, "Lightning Scroll", TCODColor::lightYellow );
         scrollOfLightningBolt -> blocks = false;
         scrollOfLightningBolt -> pickable = new LightningBolt( 5, 20 );
         engine.actors.push( scrollOfLightningBolt );
-    } else if( dice < 90 )
+    } else if( dice < 50 )
     {
         Actor *scrollOfFireball = new Actor( x, y, 21, "Fireball Scroll", TCODColor::lightYellow );
         scrollOfFireball -> blocks = false;
-        scrollOfFireball -> pickable = new Fireball( 9, 12 );
+        scrollOfFireball -> pickable = new Fireball( 3, 10 );
         engine.actors.push( scrollOfFireball );
-    } else if( dice < 100 )
+    } else if( dice < 55 )
     {
         Actor *scrollOfConfusion = new Actor( x, y, 21, "Confusion Scroll", TCODColor::lightYellow );
         scrollOfConfusion -> blocks = false;
@@ -177,10 +184,10 @@ void Map::createRoom( bool first, int x1, int y1, int x2, int y2 )
 
 void Map::render() const
 {
-    static const TCODColor darkWall( 50, 50, 50 );
-    static const TCODColor darkGround( 80, 80, 80 );
-    static const TCODColor lightWall( 130, 110, 50 );
-    static const TCODColor lightGround( 200, 180, 50 );
+    static const TCODColor visibleWall( 50, 140, 50 );
+    static const TCODColor visibleGround( 60, 60, 60 );
+    static const TCODColor unseenWall = visibleWall * 0.5f;
+    static const TCODColor unseenGround = visibleGround * 0.5f;
 
 
     for( int x = 0; x < width; x++ )
@@ -188,13 +195,29 @@ void Map::render() const
         for( int y = 0; y < height; y++ )
         {
             if ( isInFov(x,y) ) {
-            TCODConsole::root->setCharBackground(x, y, isWall(x,y) ? lightWall :lightGround );
+                TCODConsole::root->setCharForeground(x, y, isWall(x,y) ? visibleWall : visibleGround );
+            
+                if( isWall( x, y ) )
+                {
+                    TCODConsole::root -> setChar( x, y, '#' );
+                } else
+                {
+                    TCODConsole::root -> setChar( x, y, 250 );
+                }
+
             } else 
             {
                 if ( isExplored(x, y) ) {
-                    TCODConsole::root->setCharBackground(x, y, isWall(x,y) ? darkWall : darkGround );
+                    TCODConsole::root->setCharForeground(x, y, isWall(x,y) ? unseenWall : unseenGround );
+                    if( isWall( x, y ) )
+                    {
+                        TCODConsole::root -> setChar( x, y, '#' );
+                    } else
+                    {
+                        TCODConsole::root -> setChar( x, y, 250 );
+                    }
                 }
-            }
+            } 
         }
     }
 }

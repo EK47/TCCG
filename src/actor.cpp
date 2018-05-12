@@ -1,12 +1,14 @@
 #include "main.hpp"
 
+// Initialize all actor class variables.
 Actor::Actor(int x, int y, int ch, const char *name, 
     const TCODColor &col) :
     x(x),y(y),ch(ch),col(col),name(name),
     blocks(true),attacker(NULL),destructible(NULL),ai(NULL),
-    pickable(NULL), container(NULL) {
+    pickable(NULL), container(NULL), turnSinceFight( turnSinceFight ) {
 }
 
+// Delete dynamic Actor variables
 Actor::~Actor()
 {
     if( attacker ) delete attacker;
@@ -16,6 +18,7 @@ Actor::~Actor()
     if( container ) delete container;
 }
 
+// Find the distance between two points
 float Actor::getDistance( int cx, int cy ) const
 {
     int dx = x - cx;

@@ -5,15 +5,16 @@
 
 // how many turns the monster chases the player
 // after losing his sight
-static const int TRACKING_TURNS = 6;
+static const int TRACKING_TURNS = 4;
 
 MonsterAi::MonsterAi() : moveCount(0) {
 }
 
 void MonsterAi::update(Actor *owner) {
-    if ( owner->destructible && owner->destructible->isDead() ) {
+	if ( owner->destructible && owner->destructible->isDead() ) {
     	return;
     }
+	// owner -> destructible -> naturalHeal( owner, owner -> turnSinceFight );
 	if ( engine.map->isInFov(owner->x,owner->y) ) {
     	// we can see the player. move towards him
     	moveCount=TRACKING_TURNS;
@@ -34,6 +35,7 @@ void MonsterAi::moveOrAttack(Actor *owner, int targetx, int targety) {
 	if ( distance >= 2 ) {
 		dx = (int)(round(dx/distance));
 		dy = (int)(round(dy/distance));
+		// owner -> turnSinceFight += 1;
 		if ( engine.map->canWalk(owner->x+dx,owner->y+dy) ) {
 			owner->x += dx;
 			owner->y += dy;
@@ -43,16 +45,20 @@ void MonsterAi::moveOrAttack(Actor *owner, int targetx, int targety) {
 			owner->y += stepdy;
 		}
 	} else if ( owner->attacker ) {
+		// owner -> turnSinceFight = 0;
 		owner->attacker->attack(owner,engine.player);
 	}
 }
 
 void PlayerAi::update(Actor *owner) {
-    if ( owner->destructible && owner->destructible->isDead() ) {
+
+	if ( owner->destructible && owner->destructible->isDead() ) {
     	return;
     }
-	int dx=0,dy=0;
+
+	int dx = 0, dy = 0;
     bool pause = false;
+
 	switch(engine.lastKey.vk) {
 		case TCODK_UP:
         case TCODK_KP8: dy=-1; break;
@@ -82,41 +88,84 @@ void PlayerAi::update(Actor *owner) {
             dy = -1;
             dx = -1;
             break;
-        case TCODK_KP5:
-            dy = 0;
-            dx = 0;
-            pause = true;
-            break;
 
         case TCODK_CHAR:
             handleActionKey( owner, engine.lastKey.c );
+			engine.gameStatus = Engine::NEW_TURN;
             break;
 
-        default:break;
+        default: break;
     }
+
+		switch(engine.lastKey.c)
+	{
+		case 'k':
+			dy = -1;
+			break;
+		case 'j':
+			dy = 1;
+			break;
+		case 'h':
+			dx = -1;
+			break;
+		case 'l':
+			dx = 1;
+			break;
+		case 'y':
+			dy = -1;
+			dx = -1;
+			break;
+		case 'u':
+			dy = -1;
+			dx = 1;
+			break;
+		case 'b':
+			dy = 1;
+			dx = -1;
+			break;
+		case 'n':
+			dy = 1;
+			dx = 1;
+			break;
+
+		default: break;
+	}
+
+
     if (dx != 0 || dy != 0) {
-    	engine.gameStatus=Engine::NEW_TURN;
-    	if (moveOrAttack(owner, owner->x+dx,owner->y+dy)) {
-    		engine.map->computeFov();
-    	}
-	} else if( pause == true )
-    {
-        engine.gameStatus = Engine::NEW_TURN;
-    }
+		if( !engine.map -> isWall( owner -> x + dx, owner -> y + dy ) )
+		{
+    		if (moveOrAttack(owner, owner->x+dx,owner->y+dy)) {
+    			engine.map->computeFov();
+    		}
+			engine.gameStatus = Engine::NEW_TURN;
+		}
+	}
 }
 
 bool PlayerAi::moveOrAttack(Actor *owner, int targetx,int targety) {
-	if ( engine.map->isWall(targetx,targety) ) return false;
+	if ( engine.map->isWall(targetx,targety) ) 
+	{
+		owner -> turnSinceFight = 0;
+		return false;
+	}
 	// look for living actors to attack
+
+	owner -> turnSinceFight += 1;
+
 	for (Actor **iterator=engine.actors.begin();
 		iterator != engine.actors.end(); iterator++) {
 		Actor *actor=*iterator;
 		if ( actor->destructible && !actor->destructible->isDead()
 			 && actor->x == targetx && actor->y == targety ) {
+			owner -> turnSinceFight = 0;
 			owner->attacker->attack(owner, actor);
 			return false;
 		}
 	}
+
+	owner -> destructible -> naturalHeal( owner, owner -> turnSinceFight );
+
 	// look for corpses
 	for (Actor **iterator=engine.actors.begin();
 		iterator != engine.actors.end(); iterator++) {
@@ -133,7 +182,12 @@ bool PlayerAi::moveOrAttack(Actor *owner, int targetx,int targety) {
 
 void PlayerAi::handleActionKey(Actor *owner, int ascii) {
 	switch(ascii) {
-        case 'd' :
+        case '.':
+			engine.gameStatus = Engine::NEW_TURN;
+			owner -> destructible -> naturalHeal( owner, owner -> turnSinceFight );
+			owner -> turnSinceFight += 1;
+			break;
+		case 'd' :
         {
             Actor *actor = choseFromInventory( owner );
             if( actor )
@@ -162,7 +216,7 @@ void PlayerAi::handleActionKey(Actor *owner, int ascii) {
 				}
 			}
 			if (!found) {
-				engine.gui->message(TCODColor::lightGrey,"There's nothing here that you can pick.");
+				engine.gui->message(TCODColor::lightGrey,"There's nothing here that you can pick up.");
 			}
 			engine.gameStatus=Engine::NEW_TURN;
 		}
@@ -176,6 +230,8 @@ void PlayerAi::handleActionKey(Actor *owner, int ascii) {
 			}
 		}
 		break;
+
+		default: break;
 	}
 }
 

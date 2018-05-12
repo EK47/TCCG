@@ -79,7 +79,7 @@ Fireball::Fireball(float range, float damage)
 bool Fireball::use(Actor *owner, Actor *wearer) {
 	engine.gui->message(TCODColor::cyan, "Hover over a target and left click to fire!");
 	int x,y;
-	if (! engine.pickATile(&x, &y, range ) ) {
+	if (! engine.pickATile(&x, &y, range * 2 ) ) {
 		return false;
 	}
 	// burn everything in <range> (including player)

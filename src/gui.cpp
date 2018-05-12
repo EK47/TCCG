@@ -79,7 +79,7 @@ void Gui::renderMouseLook() {
 		// if mouse is out of fov, nothing to render
 		return;
 	}
-	char buf[128]="";
+	char buf[256]="";
 	bool first=true;
 	for (Actor **it=engine.actors.begin(); it != engine.actors.end(); it++) {
 		Actor *actor=*it;
@@ -101,7 +101,7 @@ void Gui::renderMouseLook() {
 void Gui::message(const TCODColor &col, const char *text, ...) {
 	// build the text
 	va_list ap;
-	char buf[128];
+	char buf[256];
 	va_start(ap,text);
 	vsprintf(buf,text,ap);
 	va_end(ap);

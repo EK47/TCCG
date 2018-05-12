@@ -15,6 +15,7 @@ public:
 
     float takeDamage( Actor *owner, float damage );
     float heal( float amount );
+    void naturalHeal( Actor *owner, int turnsSinceFight );
     virtual void die( Actor *owner );
     virtual ~Destructible() {};
 };

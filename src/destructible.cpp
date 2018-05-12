@@ -28,6 +28,15 @@ float Destructible::heal( float amount )
     return amount;
 }
 
+void Destructible::naturalHeal( Actor *owner, int turnSinceFight )
+{
+	if( turnSinceFight % 5 == 0 && owner -> destructible -> hp < owner -> destructible -> maxHp )
+	{
+		turnSinceFight = 0;
+		owner -> destructible -> hp = owner -> destructible -> hp + 1;
+	}
+}
+
 void Destructible::die(Actor *owner) {
 	// transform the actor into a corpse!
 	owner->ch='%';
