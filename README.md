@@ -14,3 +14,5 @@ Programmed by Ethan Kelly.
 Loosely based upon the works of Ethan Kelly.
 
 Creative Direction provided by Calvin Higdon.
+
+Art Style inspired by the amazing Cogmind roguelike.
