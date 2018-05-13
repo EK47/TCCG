@@ -35,14 +35,16 @@ void MonsterAi::moveOrAttack(Actor *owner, int targetx, int targety) {
 	if ( distance >= 2 ) {
 		dx = (int)(round(dx/distance));
 		dy = (int)(round(dy/distance));
-		owner -> turnSinceFight += 1;
 		if ( engine.map->canWalk(owner->x+dx,owner->y+dy) ) {
 			owner->x += dx;
 			owner->y += dy;
+			owner -> turnSinceFight += 1;
 		} else if ( engine.map->canWalk(owner->x+stepdx,owner->y) ) {
 			owner->x += stepdx;
+			owner -> turnSinceFight += 1;
 		} else if ( engine.map->canWalk(owner->x,owner->y+stepdy) ) {
 			owner->y += stepdy;
+			owner -> turnSinceFight += 1;
 		}
 	} else if ( owner->attacker ) {
 		owner -> turnSinceFight = 0;

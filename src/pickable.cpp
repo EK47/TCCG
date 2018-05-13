@@ -66,7 +66,19 @@ bool LightningBolt::use( Actor *owner, Actor *wearer )
 
     engine.gui -> message( TCODColor( 50, 100, 200 ), "A loud flash is seen as %s is struck with lightning!\n"
         "It is hit for %g damage!", closestMonster -> name, damage );
+
     closestMonster -> destructible -> takeDamage( closestMonster, damage );
+
+    engine.render();
+
+    for( int time = 1; time < 150; time++ )
+    {
+        float multiplier { 0 };
+        TCODRandom *multRng = TCODRandom::getInstance();
+        multiplier = sqrt( time );
+        multiplier = multiplier / multRng -> getInt( 2, 4 );
+        renderLine( wearer, closestMonster, multiplier, TCODColor( 50, 150, 255 ) );
+    }
 
     return Pickable::use( owner, wearer );
 }
@@ -82,7 +94,7 @@ bool Fireball::use(Actor *owner, Actor *wearer) {
 	if (! engine.pickATile(&x, &y, range * 2 ) ) {
 		return false;
 	}
-    
+
 	// burn everything in <range> (including player)
 	engine.gui->message(TCODColor::orange,"It implodes, setting everything %g blocks around it on fire!",range);
 	for (Actor **iterator=engine.actors.begin();

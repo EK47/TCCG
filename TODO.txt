@@ -8,10 +8,6 @@ get your HP back up to max.
 
 ISSUES / FEATURES:
 
-
-Work on the line interpolation for the lightning
-spell, and the explosion effect for the fireball.
-
 Make a wait feature that goes until all health is
 restored, or until a creature is seen in FOV.
 

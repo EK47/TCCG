@@ -83,8 +83,8 @@ void Map::addMonster( int x, int y )
     } else if( val < 100 )
     {
         Actor *bob = new Actor( x, y, 'B', "Big Bob", TCODColor::darkBlue );
-        bob -> destructible = new MonsterDestructible( 30, 2, "Fatty Cadaver" );
-        bob -> attacker = new Attacker( 5 );
+        bob -> destructible = new MonsterDestructible( 12, 2, "Fatty Cadaver" );
+        bob -> attacker = new Attacker( 6 );
         bob -> ai = new MonsterAi();
         engine.actors.push( bob );
     }
@@ -100,19 +100,19 @@ void Map::addItem( int x, int y )
         healthPotion -> blocks = false;
         healthPotion -> pickable = new Healer( 8 );
         engine.actors.push( healthPotion );
-    } else if( dice < 45 )
+    } else if( dice < 50 )
     {
         Actor *scrollOfLightningBolt = new Actor( x, y, 21, "Lightning Scroll", TCODColor::lightYellow );
         scrollOfLightningBolt -> blocks = false;
         scrollOfLightningBolt -> pickable = new LightningBolt( 5, 20 );
         engine.actors.push( scrollOfLightningBolt );
-    } else if( dice < 50 )
+    } else if( dice < 60 )
     {
         Actor *scrollOfFireball = new Actor( x, y, 21, "Fireball Scroll", TCODColor::lightYellow );
         scrollOfFireball -> blocks = false;
         scrollOfFireball -> pickable = new Fireball( 3, 10 );
         engine.actors.push( scrollOfFireball );
-    } else if( dice < 55 )
+    } else if( dice < 65 )
     {
         Actor *scrollOfConfusion = new Actor( x, y, 21, "Confusion Scroll", TCODColor::lightYellow );
         scrollOfConfusion -> blocks = false;
