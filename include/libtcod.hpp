@@ -28,6 +28,10 @@
 #ifndef _LIBTCOD_HPP
 #define _LIBTCOD_HPP
 
+#  ifdef __LP64__
+#    define TCOD_64BITS
+#  endif
+
 #include "libtcod.h"
 
 #include "bresenham.hpp"

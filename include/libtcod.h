@@ -28,6 +28,10 @@
 #ifndef _LIBTCOD_H
 #define _LIBTCOD_H
 
+#  ifdef __LP64__
+#    define TCOD_64BITS
+#  endif
+
 #include "libtcod_portability.h"
 #include "libtcod_utility.h"
 #include "libtcod_version.h"

@@ -27,8 +27,8 @@ float Actor::getDistance( int cx, int cy ) const
 }
 
 void Actor::render() const {
-    TCODConsole::root->setChar(x,y,ch);
-    TCODConsole::root->setCharForeground(x,y,col);
+    TCODConsole::root->setChar( lastLocationX, lastLocationY, ch);
+    TCODConsole::root->setCharForeground( lastLocationX, lastLocationY, col);
 }
 
 void Actor::update() {

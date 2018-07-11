@@ -54,6 +54,15 @@ void Engine::render()
         Actor *actor = *iterator;
         if( map -> isInFov( actor -> x, actor -> y ) )
         {
+            actor -> lastLocationX = actor -> x;
+            actor -> lastLocationY = actor -> y;
+            actor -> render();
+        } else if( map -> isInFov( actor -> lastLocationX, actor -> lastLocationY ) )
+        {
+            actor -> lastLocationX = -100;
+            actor -> lastLocationY = -100;
+        } else if( !( map -> isInFov( actor -> x, actor -> y) ) && actor -> lastLocationX != -100 && actor -> lastLocationY != -100 )
+        {
             actor -> render();
         }
     }

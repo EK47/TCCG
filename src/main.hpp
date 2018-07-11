@@ -2,8 +2,7 @@
 #include <algorithm>
 #include <math.h>
 #include "../include/libtcod.hpp"
-#include "../include/boost/archive/text_iarchive.hpp"
-#include "../include/boost/archive/text_oarchive.hpp"
+#include "../include/cereal/cereal.hpp"
 class Actor;
 #include "effects.hpp"
 #include "destructible.hpp"
