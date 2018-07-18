@@ -1,0 +1,42 @@
+////////////////////////////////////////////////////////////////
+// Unseen tiles color is 0.5f of seen
+// Color Palette:
+//  
+// GUI:
+//  World Events:     TCODColor( 102, 102, 102 );
+//  Good Things:       TCODColor( 51, 153, 255 );
+//  Bad Things:       TCODColor( 255, 102, 255 );
+//  Mystical Things:    TCODColor( 128, 0, 255 );
+//  Odd / Unknown Things: TCODColor( 0, 0, 217 );
+//  Gui Background:      TCODColor( 0, 51, 102 );
+//  Gui Foreground:     TCODColor( 0, 134, 178 );
+//
+//
+//
+// TILES:
+//  Tile Background:     TCODColor( 20, 20, 20 );
+//  Dungeon Wall:       TCODColor( 50, 140, 50 );
+//  Dungeon Floor:       TCODColor( 60, 60, 60 );
+//
+//  
+// 
+//
+// CREATURES:
+//  Calvin:           TCODColor( 250, 240, 190 );
+//  Orc:             TCODColor::desaturatedGreen;
+//  Troll:                TCODColor::darkerGreen;
+//  Demon:                  TCODColor::darkerRed;
+//  Bob:                     TCODColor::darkBlue;
+//  Corpse:               TCODColor( 140, 0, 0 );
+//  
+//
+//
+//
+// ITEMS:
+//  Ration:            TCODColor ( 30, 175, 30 );
+//  Scroll:               TCODColor::lightYellow;
+//
+//
+//
+//  
+////////////////////////////////////////////////////////////////

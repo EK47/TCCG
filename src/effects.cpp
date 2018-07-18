@@ -1,6 +1,8 @@
 #include "main.hpp"
 
-void renderLine( Actor *owner, Actor *target, float multiplier, const TCODColor &col )
+
+
+void renderLine( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> target, float multiplier, const TCODColor &col )
 {
     // Current x and y;
     int cX = owner -> x;

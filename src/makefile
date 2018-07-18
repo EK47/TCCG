@@ -10,12 +10,12 @@ $(TEMP)/%.o : $(SRCDIR)/%.cpp
 $(TEMP)/%.o : $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -o $@ -c $< 
 
-CPP_OBJS=$(TEMP)/main.o $(TEMP)/actor.o $(TEMP)/map.o $(TEMP)/engine.o $(TEMP)/attacker.o $(TEMP)/ai.o $(TEMP)/destructible.o $(TEMP)/gui.o $(TEMP)/container.o $(TEMP)/pickable.o $(TEMP)/effects.o
+CPP_OBJS=$(TEMP)/main.o $(TEMP)/actor.o $(TEMP)/map.o $(TEMP)/engine.o $(TEMP)/attacker.o $(TEMP)/ai.o $(TEMP)/destructible.o $(TEMP)/gui.o $(TEMP)/container.o $(TEMP)/pickable.o $(TEMP)/effects.o $(TEMP)/astar.o
 
 all : main
 
 main : $(CPP_OBJS)
-	$(CPP) $(CPP_OBJS) -o $@ -L${LIBTCODDIR} -lz -ltcod -ltcodxx -Wl,-rpath=.
+	$(CPP) $(CPP_OBJS) -o $@ -L${LIBTCODDIR} -lz -ltcod -ltcodxx -lSDL2 -lSDL2_mixer -Wl,-rpath=.
 
 clean :
 	\rm -f $(CPP_OBJS) main

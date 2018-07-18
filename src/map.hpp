@@ -16,25 +16,36 @@ class Map
 {
 public:
     int width, height;
-
+    std::shared_ptr<TCODPath> path;
+    std::shared_ptr<TCODMap> map;
     Map( int width, int height );
     ~Map();
     bool isWall( int x, int y ) const;
     bool isInFov( int x, int y ) const;
+    bool LivingThingInFov() const;
     bool isExplored( int x, int y ) const;
     bool canWalk( int x, int y ) const;
     void addMonster( int x, int y );
     void addItem( int x, int y );
     void computeFov();
     void render() const;
+    Mix_Music *dungeonL1;
 protected:
     Tile *tiles;
-    TCODMap *map;
     friend class BspListener;
-
     void dig( int x1, int y1, int x2, int y2 );
     void createRoom( bool first, int x1, int y1, int x2, int y2 );
 };
+
+/*
+class PathListener : public ITCODPathCallback {
+public:
+    float getWalkCost(int xFrom, int yFrom, int xTo, int yTo, void *userData ) const
+    {
+        
+    }
+};
+*/
 
 class BspListener : public ITCODBspCallback
 {

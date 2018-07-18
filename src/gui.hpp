@@ -13,7 +13,7 @@ protected :
 		Message(const char *text, const TCODColor &col);
 		~Message();
 	};
-	TCODList<Message *> log;
+	std::vector<std::shared_ptr<Message>> log;
 
 	void renderBar(int x, int y, int width, const char *name,
 		float value, float maxValue, const TCODColor &barColor,

@@ -1,6 +1,6 @@
 #include "main.hpp"
 
-Engine engine( 80, 50 );
+Engine engine( 160, 100 );
 
 int main() {
 

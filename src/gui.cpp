@@ -2,8 +2,8 @@
 #include <stdarg.h>
 #include "main.hpp"
 
-static const int PANEL_HEIGHT=7;
-static const int BAR_WIDTH=20;
+static const int PANEL_HEIGHT=20;
+static const int BAR_WIDTH=15;
 static const int MSG_X=BAR_WIDTH+2;
 static const int MSG_HEIGHT=PANEL_HEIGHT-1;
 
@@ -13,7 +13,7 @@ Gui::Gui() {
 
 Gui::~Gui() {
 	delete con;
-	log.clearAndDelete();
+	log.clear();
 }
 
 void Gui::render() {
@@ -29,10 +29,9 @@ void Gui::render() {
 	// draw the message log
 	int y=1;
 	float colorCoef=0.4f;
-	for (Message **it=log.begin(); it != log.end(); it++) {
-		Message *message=*it;
-		con->setDefaultForeground(message->col * colorCoef);
-		con->print(MSG_X,y,message->text);
+	for ( auto &msg : log ) {
+		con->setDefaultForeground( msg->col * colorCoef);
+		con->print(MSG_X,y, msg->text);
 		y++;
 		if ( colorCoef < 1.0f ) {
 			colorCoef+=0.3f;
@@ -81,8 +80,7 @@ void Gui::renderMouseLook() {
 	}
 	char buf[256]="";
 	bool first=true;
-	for (Actor **it=engine.actors.begin(); it != engine.actors.end(); it++) {
-		Actor *actor=*it;
+	for ( auto &actor : engine.actors ) {
 		// find actors under the mouse cursor
 		if (actor->x == engine.mouse.cx && actor->y == engine.mouse.cy ) {
 			if (! first) {
@@ -111,9 +109,7 @@ void Gui::message(const TCODColor &col, const char *text, ...) {
 	do {
 		// make room for the new message
 		if ( log.size() == MSG_HEIGHT ) {
-			Message *toRemove=log.get(0);
-			log.remove(toRemove);
-			delete toRemove;
+			log.erase(begin(log));
 		}
 
 		// detect end of the line
@@ -123,8 +119,8 @@ void Gui::message(const TCODColor &col, const char *text, ...) {
 		}
 
 		// add a new message to the log
-		Message *msg=new Message(lineBegin, col);
-		log.push(msg);
+		std::shared_ptr<Message> msg = std::make_shared<Message>( lineBegin, col );
+		log.push_back(msg);
 
 		// go to next line
 		lineBegin=lineEnd+1;

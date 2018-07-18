@@ -7,7 +7,7 @@ public:
     float power;
 
     Attacker( float power );
-    void attack( Actor *owner, Actor *target );
+    void attack( std::shared_ptr<Actor> attacker, std::shared_ptr<Actor> target );
 };
 
 #endif

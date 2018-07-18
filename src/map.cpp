@@ -2,8 +2,16 @@
 
 Map::Map( int width, int height ) : width( width ), height( height )
 {
+    dungeonL1 = Mix_LoadMUS("../assets/music/LoneBit.mp3");
+    if(Mix_PlayMusic( dungeonL1, -1) ==-1)
+    {
+        printf("Mix_PlayMusic: %s\n", Mix_GetError());
+        // well, there's no music, but most games don't break without music...
+    }
+    Mix_VolumeMusic( 110 );
     tiles = new Tile[ width * height ];
-    map = new TCODMap( width, height );
+    map = std::make_shared<TCODMap>( width, height );
+    path = std::make_shared<TCODPath>( map.get(), 1.0f );
     TCODBsp bsp( 0, 0, width, height );
     bsp.splitRecursive( NULL, 8, ROOM_MAX_SIZE, ROOM_MIN_SIZE, 1.5f, 1.5f );
     BspListener listener( *this );
@@ -13,13 +21,15 @@ Map::Map( int width, int height ) : width( width ), height( height )
 Map::~Map()
 {
     delete [] tiles;
-    delete map;
+    Mix_HaltMusic();
+    delete dungeonL1;
 }
 
 bool Map::isWall(int x, int y) const 
 {
    return !map->isWalkable(x,y);
 }
+
 bool Map::isInFov(int x, int y) const {
    if( x < 0 || x >= width || y < 0 || y >= height )
    {
@@ -30,6 +40,18 @@ bool Map::isInFov(int x, int y) const {
        return true;
    }
    return false;
+}
+
+bool Map::LivingThingInFov() const
+{
+    for( auto &actor : engine.actors )
+	{
+		if( actor -> name != engine.player -> name && actor -> destructible != nullptr && actor -> destructible -> isAlive() && engine.map -> isInFov( actor -> x, actor -> y ) )
+		{
+            return true;
+		}
+	}
+    return false;
 }
 
 bool Map::isExplored( int x, int y ) const
@@ -44,9 +66,8 @@ bool Map::canWalk( int x, int y ) const
         return false;
     }
 
-    for( Actor **iterator = engine.actors.begin(); iterator != engine.actors.end(); iterator++ )
+    for( auto& actor : engine.actors )
     {
-        Actor *actor = *iterator;
         if( actor -> blocks && actor -> x == x && actor -> y == y )
         {
             return false;
@@ -59,34 +80,40 @@ void Map::addMonster( int x, int y )
 {
     TCODRandom *rng = TCODRandom::getInstance();
     int val = rng -> getInt( 0, 100 );
-    if( val < 60 )
+    if( val < 25 )
     {
-        Actor *orc = new Actor( x, y, 'o', "Orc", TCODColor::desaturatedGreen );
-        orc -> destructible = new MonsterDestructible( 10, 0, "Dead Orc" );
-        orc -> attacker = new Attacker( 3 );
-        orc -> ai = new MonsterAi();
-        engine.actors.push( orc );
+        std::shared_ptr<Actor> Cockroach = std::make_shared<Actor>( x, y, 'c', "Cockroach", TCODColor::darkerSepia );
+        Cockroach -> destructible = std::make_shared<NPCDestructible>( 1, 0, "Bug Stain" );
+        Cockroach -> ai = std::make_shared<NPCAi>( Cockroach );
+        engine.actors.push_back( Cockroach );
+    } else if( val < 60 )
+    {
+        std::shared_ptr<Actor> orc = std::make_shared<Actor>( x, y, 'o', "Orc", TCODColor::desaturatedGreen );
+        orc -> destructible = std::make_shared<MonsterDestructible>( 10, 0, "Dead Orc" );
+        orc -> attacker = std::make_shared<Attacker>( 3 );
+        orc -> ai = std::make_shared<MonsterAi>();
+        engine.actors.push_back( orc );
     } else if( val < 80 )
     {
-        Actor *troll = new Actor( x, y, 'T', "Troll", TCODColor::darkerGreen );
-        troll -> destructible = new MonsterDestructible( 16, 1, "Troll Carcass" );
-        troll -> attacker = new Attacker( 4 );
-        troll -> ai = new MonsterAi();
-        engine.actors.push( troll );
+        std::shared_ptr<Actor> troll = std::make_shared<Actor>( x, y, 'T', "Troll", TCODColor::darkerGreen );
+        troll -> destructible = std::make_shared<MonsterDestructible>( 16, 1, "Troll Carcass" );
+        troll -> attacker = std::make_shared<Attacker>( 4 );
+        troll -> ai = std::make_shared<MonsterAi>();
+        engine.actors.push_back( troll );
     } else if( val < 90 )
     {
-        Actor *demon = new Actor( x, y, 'D', "Demon", TCODColor::darkerRed );
-        demon -> destructible = new MonsterDestructible( 25, 2, "Scorched Corpse" );
-        demon -> attacker = new Attacker( 4 );
-        demon -> ai = new MonsterAi();
-        engine.actors.push( demon );
+        std::shared_ptr<Actor> demon = std::make_shared<Actor>( x, y, 'D', "Demon", TCODColor::darkerRed );
+        demon -> destructible = std::make_shared<MonsterDestructible>( 25, 2, "Scorched Corpse" );
+        demon -> attacker = std::make_shared<Attacker>( 4 );
+        demon -> ai = std::make_shared<MonsterAi>();
+        engine.actors.push_back( demon );
     } else if( val < 100 )
     {
-        Actor *bob = new Actor( x, y, 'B', "Big Bob", TCODColor::darkBlue );
-        bob -> destructible = new MonsterDestructible( 12, 2, "Fatty Cadaver" );
-        bob -> attacker = new Attacker( 6 );
-        bob -> ai = new MonsterAi();
-        engine.actors.push( bob );
+        std::shared_ptr<Actor> bob = std::make_shared<Actor>( x, y, 'B', "Big Bob", TCODColor::darkBlue );
+        bob -> destructible = std::make_shared<MonsterDestructible>( 12, 2, "Fatty Cadaver" );
+        bob -> attacker = std::make_shared<Attacker>( 6 );
+        bob -> ai = std::make_shared<MonsterAi>();
+        engine.actors.push_back( bob );
     }
 }
 
@@ -96,28 +123,28 @@ void Map::addItem( int x, int y )
     int dice = rng -> getInt( 0, 100 );
     if( dice < 40 )
     {
-        Actor *healthPotion = new Actor( x, y, 15, "slice of \'fresh\' bread", TCODColor ( 30, 175, 30 ) );
+        std::shared_ptr<Actor> healthPotion = std::make_shared<Actor>( x, y, 15, "slice of \'fresh\' bread", TCODColor ( 30, 175, 30 ) );
         healthPotion -> blocks = false;
-        healthPotion -> pickable = new Healer( 8 );
-        engine.actors.push( healthPotion );
+        healthPotion -> pickable = std::make_shared<Healer>( 8 );
+        engine.actors.push_back( healthPotion );
     } else if( dice < 50 )
     {
-        Actor *scrollOfLightningBolt = new Actor( x, y, 21, "Lightning Scroll", TCODColor::lightYellow );
+        std::shared_ptr<Actor> scrollOfLightningBolt = std::make_shared<Actor>( x, y, 21, "Lightning Scroll", TCODColor::lightYellow );
         scrollOfLightningBolt -> blocks = false;
-        scrollOfLightningBolt -> pickable = new LightningBolt( 5, 20 );
-        engine.actors.push( scrollOfLightningBolt );
+        scrollOfLightningBolt -> pickable = std::make_shared<LightningBolt>( 5, 20 );
+        engine.actors.push_back( scrollOfLightningBolt );
     } else if( dice < 60 )
     {
-        Actor *scrollOfFireball = new Actor( x, y, 21, "Fireball Scroll", TCODColor::lightYellow );
+        std::shared_ptr<Actor> scrollOfFireball = std::make_shared<Actor>( x, y, 21, "Fireball Scroll", TCODColor::lightYellow );
         scrollOfFireball -> blocks = false;
-        scrollOfFireball -> pickable = new Fireball( 3, 10 );
-        engine.actors.push( scrollOfFireball );
+        scrollOfFireball -> pickable = std::make_shared<Fireball>( 3, 10 );
+        engine.actors.push_back( scrollOfFireball );
     } else if( dice < 65 )
     {
-        Actor *scrollOfConfusion = new Actor( x, y, 21, "Confusion Scroll", TCODColor::lightYellow );
+        std::shared_ptr<Actor> scrollOfConfusion = std::make_shared<Actor>( x, y, 21, "Confusion Scroll", TCODColor::lightYellow );
         scrollOfConfusion -> blocks = false;
-        scrollOfConfusion -> pickable = new Confuser( 10, 8 );
-        engine.actors.push( scrollOfConfusion );
+        scrollOfConfusion -> pickable = std::make_shared<Confuser>( 10, 8 );
+        engine.actors.push_back( scrollOfConfusion );
     }
 }
 

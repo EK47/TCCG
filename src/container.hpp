@@ -5,12 +5,12 @@ class Container
 {
 public:
     int size;
-    TCODList<Actor *> inventory;
+    std::vector<std::shared_ptr<Actor>> inventory;
 
     Container( int size );
     ~Container();
-    bool add( Actor *actor );
-    void remove( Actor *actor );
+    bool add( std::shared_ptr<Actor> actor );
+    void remove( std::shared_ptr<Actor> actor );
 };
 
 #endif

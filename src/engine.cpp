@@ -5,41 +5,53 @@ static const bool FULLSCREEN = false;
 
 Engine::Engine( int screenWidth, int screenHeight ) : gameStatus( STARTUP ), screenWidth( screenWidth ), screenHeight( screenHeight )
 {
-
+    musicStart();
     // Limits FPS as to protect CPU usage
     TCODSystem::setFps( 60 );
-    TCODConsole::initRoot( 80, 50, "The Calvin Chronicles Game", FULLSCREEN );
+    TCODConsole::initRoot( screenWidth, screenHeight, "The Calvin Chronicles Game", FULLSCREEN );
+    TCODConsole::setCustomFont("terminal16x16_gs_ro.png", TCOD_FONT_TYPE_GREYSCALE | TCOD_FONT_LAYOUT_ASCII_INROW );
     // Creates the player
-    player = new Actor( 40, 25, '@', "Calvin", TCODColor ( 250, 240, 190 ) );
-    player -> destructible = new PlayerDestructible( 30, 2, "Your Corpse" );
-    player -> attacker = new Attacker( 5 );
-    player -> ai = new PlayerAi();
-    player -> container = new Container( 26 );
-    actors.push( player );
-    map = new Map( 80, 42 );
+    player = std::make_shared<Actor>( 1, 1, '@', "Calvin", TCODColor( 250, 240, 190 ) );
+    player -> destructible = std::make_shared<PlayerDestructible>( 30, 2, "Your Corpse" );
+    player -> attacker = std::make_shared<Attacker>( 5 );
+    player -> ai = std::make_shared<PlayerAi>();
+    player -> container = std::make_shared<Container>( 10 );
+    actors.push_back( player );
+    map = std::make_unique<Map>( (3 * screenWidth ) / 4, ( 3 * screenHeight ) / 4 );
     gui = new Gui();
 
-    gui->message( TCODColor::red, "Save us, Calvin! You're our only hope!" );
+    gui->message( TCODColor::red, "Venture into the depths, Calvin," );
+    gui->message( TCODColor::darkerRed, "and feed us your soul." );
 }
 
 Engine::~Engine()
 {
-    actors.clearAndDelete();
-    delete map;
+    actors.clear();
+    Mix_CloseAudio();
     delete gui;
+}
+
+void Engine::musicStart()
+{
+    // Load SDL sound engine
+    if( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 1024 ) == -1 )
+    {
+        printf("%s", Mix_GetError() );
+    }
 }
 
 void Engine::update() {
 	if ( gameStatus == STARTUP ) map->computeFov();
    	gameStatus=IDLE;
     TCODSystem::checkForEvent(TCOD_EVENT_KEY_PRESS|TCOD_EVENT_MOUSE,&lastKey,&mouse);
-    player->update();
+    player->update( player );
     if ( gameStatus == NEW_TURN ) {
-	    for (Actor **iterator=actors.begin(); iterator != actors.end();
-	        iterator++) {
-	        Actor *actor=*iterator;
-	        if ( actor != player ) {
-	            actor->update();
+	    for ( auto &actor : actors ) {
+	        if ( actor->name != "Calvin" && actor->destructible ) {
+	            if( !actor->destructible->isDead() )
+                {
+                    actor->update( actor );
+                }
 	        }
 	    }
 	}
@@ -49,9 +61,8 @@ void Engine::render()
 {
     TCODConsole::root -> clear();
     map -> render();
-    for( Actor **iterator = actors.begin(); iterator != actors.end(); iterator++ )
+    for( auto &actor : actors )
     {
-        Actor *actor = *iterator;
         if( map -> isInFov( actor -> x, actor -> y ) )
         {
             actor -> lastLocationX = actor -> x;
@@ -59,9 +70,9 @@ void Engine::render()
             actor -> render();
         } else if( map -> isInFov( actor -> lastLocationX, actor -> lastLocationY ) )
         {
-            actor -> lastLocationX = -100;
-            actor -> lastLocationY = -100;
-        } else if( !( map -> isInFov( actor -> x, actor -> y) ) && actor -> lastLocationX != -100 && actor -> lastLocationY != -100 )
+            actor -> lastLocationX = NULL;
+            actor -> lastLocationY = NULL;
+        } else if( !( map -> isInFov( actor -> x, actor -> y) ) && actor -> lastLocationX != NULL && actor -> lastLocationY != NULL )
         {
             actor -> render();
         }
@@ -70,20 +81,13 @@ void Engine::render()
     gui -> render();
 }
 
-void Engine::sendToBack( Actor *actor )
+std::shared_ptr<Actor> Engine::getClosestMonster( int x, int y, float range ) const
 {
-    actors.remove( actor );
-    actors.insertBefore( actor, 0 );
-}
-
-Actor *Engine::getClosestMonster( int x, int y, float range ) const
-{
-    Actor *closest = NULL;
+    std::shared_ptr<Actor> closest = NULL;
     float bestDistance = 1E6f;
 
-    for( Actor **iterator = actors.begin(); iterator != actors.end(); iterator++ )
+    for( auto &actor : actors )
     {
-        Actor *actor = *iterator;
         if( actor != player && actor -> destructible && ! actor -> destructible -> isDead() )
         {
             float distance = actor -> getDistance( x, y );
@@ -97,11 +101,10 @@ Actor *Engine::getClosestMonster( int x, int y, float range ) const
     return closest;
 }
 
-Actor *Engine::getActor( int x, int y ) const
+std::shared_ptr<Actor> Engine::getActor( int x, int y ) const
 {
-    for( Actor **iterator = actors.begin(); iterator != actors.end(); iterator++ )
+    for( auto &actor : actors )
     {
-        Actor *actor = *iterator;
         if( actor -> x == x && actor -> y == y && actor -> destructible && !actor -> destructible -> isDead() )
         {
             return actor;

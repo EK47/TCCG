@@ -7,21 +7,22 @@ Container::Container( int size ) : size( size )
 
 Container::~Container()
 {
-    inventory.clearAndDelete();
+    inventory.clear();
 }
 
-bool Container::add( Actor *actor )
+bool Container::add( std::shared_ptr<Actor> actor )
 {
     if( size > 0 && inventory.size() >= size )
     {
         return false;
     }
 
-    inventory.push( actor );
+    inventory.push_back( actor );
     return true;
 }
 
-void Container::remove( Actor *actor )
+void Container::remove( std::shared_ptr<Actor> actor )
 {
-    inventory.remove( actor );
+    auto it = find( inventory.begin(), inventory.end(), actor );
+    inventory.erase( it );
 }
