@@ -1,9 +1,6 @@
 # TCCG
 The Calvin Chronicles Game
 
-This is a game by Ethan Kelly. 
-
-Updated almost every week.
 
 Programmed in C++, it uses SDL and the Doryen / libtcod library.
 
