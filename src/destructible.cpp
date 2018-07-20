@@ -1,3 +1,23 @@
+/*
+
+    The Calvin Chronicle's Game
+    Copyright (C) 2018 Ethan Kelly
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #include <stdio.h>
 #include "main.hpp"
 
@@ -45,7 +65,7 @@ void Destructible::naturalHeal( std::shared_ptr<Actor> owner, int turnSinceFight
 void Destructible::die( std::shared_ptr<Actor> owner ) {
 	// transform the actor into a corpse!
 	owner->ch='~';
-	owner->col=TCODColor::darkRed;	
+	owner->col=corpse;	
 	owner->name=corpseName;
 	owner->blocks=false;
 	// Prioritize creatures over corpses. Should be obselete when the multi-actor tile switch system is done.
@@ -60,7 +80,7 @@ MonsterDestructible::MonsterDestructible(float maxHp, float defense, const char 
 void MonsterDestructible::die( std::shared_ptr<Actor> owner ) {
 	// transform it into a nasty corpse! it doesn't block, can't be
 	// attacked and doesn't move
-	engine.gui->message(TCODColor::lightGrey,"%s is dead",owner->name);
+	engine.gui->message( worldEvents,"%s is dead",owner->name);
 	Destructible::die( owner );
 }
 
@@ -69,7 +89,7 @@ PlayerDestructible::PlayerDestructible(float maxHp, float defense, const char *c
 }
 
 void PlayerDestructible::die( std::shared_ptr<Actor> owner ) {
-	engine.gui->message(TCODColor::red,"You died!");
+	engine.gui->message( badThing, "You died!");
 	Destructible::die(owner);
 	engine.gameStatus=Engine::DEFEAT;
 }
@@ -82,6 +102,6 @@ NPCDestructible::NPCDestructible( float maxHp, float defense, const char* corpse
 
 void NPCDestructible::die( std::shared_ptr<Actor> owner )
 {
-	engine.gui -> message( TCODColor( 102, 102, 102 ), "Poor helpess %s died.", owner -> name );
+	engine.gui -> message( worldEvents, "Poor helpess %s died.", owner -> name );
 	Destructible::die( owner );
 }

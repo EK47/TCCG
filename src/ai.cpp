@@ -1,10 +1,27 @@
+/*
+
+    The Calvin Chronicle's Game
+    Copyright (C) 2018 Ethan Kelly
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #include <stdio.h>
 #include <math.h>
 #include <algorithm>
 #include "main.hpp"
-
-// how many turns the monster chases the player
-// after losing his sight
 
 MonsterAi::MonsterAi() : moveCount(0)
 { }
@@ -13,32 +30,40 @@ MonsterAi::~MonsterAi()
 { }
 
 void MonsterAi::update( std::shared_ptr<Actor> owner ) {
+	// If the actor can die, and the monster is dead, stop updating.
 	if ( owner->destructible && owner->destructible->isDead() ) {
     	return;
     }
-   	
+
+   	// If the creature is in the FOV, the creature stores the player's last seen location
 	if ( engine.map->isInFov(owner->x,owner->y) ) {
     	lkX = engine.player -> x;
 		lkY = engine.player -> y;
     }
+	// If the last known location of the player isn't NULL, moveOrAttack
 	if( lkX != NULL && lkY != NULL )
 	{
 		moveOrAttack( owner, lkX, lkY );
 	}
+	// Heal naturally.
 	owner -> destructible -> naturalHeal( owner, owner -> turnSinceFight );
 }
 
 void MonsterAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int targety)
 {
+	// Compute the path from the current position to the target.
 	engine.map -> path -> compute( owner->x, owner->y, targetx, targety );
 	// std::cout << owner -> name << ": " << engine.map -> path -> size() << std::endl;
 	int cX, cY, nX, nY;
+	// Get the current X and Y, then the next X and Y
 	engine.map -> path -> getOrigin( &cX, &cY );
 	engine.map -> path -> get( 0, &nX, &nY );
+	// If the creature can walk to the next tile, walk there.
 	if( engine.map->canWalk( nX, nY ) )
 	{
 		engine.map -> path -> walk( &(owner -> x), &(owner -> y), true );
 		owner -> turnSinceFight += 1;
+	// If the creature's next tile is the player
 	} else if( engine.player -> x == nX && engine.player -> y == nY && owner -> attacker )
 	{
 		owner -> attacker -> attack( owner, engine.player );
@@ -73,6 +98,7 @@ void MonsterAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int tar
 
 void PlayerAi::update( std::shared_ptr<Actor> owner) {
 
+	// If the player is dead, stop updating.
 	if ( owner->destructible && owner->destructible->isDead() ) {
     	return;
     }
@@ -109,6 +135,7 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 			dy = 1;
 			dx = 1;
 			break;
+		// Wait one turn
 		case '.':
 		{
 			engine.gameStatus = Engine::NEW_TURN;
@@ -116,14 +143,15 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 			owner -> turnSinceFight += 1;
 		}
 		break;
+		// Rest until fully healed
 		case 't':
 		{
 			// Extremely rudimentary and should be changed soon
-			if( !(engine.map -> LivingThingInFov()) )
+			if( !(engine.map -> EnemyInFov()) )
 			{
 				if( owner -> destructible -> hp == owner -> destructible -> maxHp )
 				{
-					engine.gui -> message( TCODColor::grey, "You are already fully rested!" );
+					engine.gui -> message( worldEvents, "You are already fully rested!" );
 				}
 				while( owner -> destructible -> hp < owner -> destructible -> maxHp )
 				{
@@ -132,11 +160,11 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 				engine.gameStatus = Engine::NEW_TURN;
 			} else
 			{
-				engine.gui -> message( TCODColor::grey, "You cannot rest: Creatures nearby." );
+				engine.gui -> message( worldEvents, "You cannot rest: Creatures nearby." );
 			}
 		}
 		break;
-		case 'd' :
+		case 'd': // Drop item
         {
             std::shared_ptr<Actor> item = choseFromInventory( owner );
             if( item )
@@ -146,7 +174,7 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
             }
         }
         break;
-		case 'g' : // pickup item
+		case 'g': // Pickup item
 		{
 			bool found=false;
 			for ( auto &actor : engine.actors ) {
@@ -154,22 +182,22 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 					auto lootname = actor -> name;
 					if (actor->pickable->pick(actor,owner)) {
 						found=true;
-						engine.gui->message(TCODColor::lightGrey,"You pick up the %s.",
+						engine.gui->message( worldEvents,"You pick up the %s.",
 							lootname );
 							engine.gameStatus=Engine::NEW_TURN;
 						break;
 					} else if (! found) {
 						found=true;
-						engine.gui->message(TCODColor::red,"Your inventory is full.");
+						engine.gui->message( guiForeground,"Your inventory is full.");
 					}
 				}
 			}
 			if (!found) {
-				engine.gui->message(TCODColor::lightGrey,"There's nothing here that you can pick up.");
+				engine.gui->message( worldEvents,"There's nothing here that you can pick up.");
 			}
 		}
 		break;
-		case 'i' : // display inventory
+		case 'i': // display inventory
 		{
 			std::shared_ptr<Actor> item = choseFromInventory( owner );
 			if ( item ) {
@@ -194,11 +222,13 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 	}
 }
 
-bool PlayerAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx,int targety) {
+bool PlayerAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx,int targety) {	
+	/*
 	if ( engine.map->isWall(targetx,targety) ) 
 	{
 		return false;
 	}
+	*/
 	// look for living actors to attack
 
 	owner -> turnSinceFight += 1;
@@ -219,7 +249,7 @@ bool PlayerAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx,int targe
 	{
         bool corpseOrItem = ( actor -> destructible && actor -> destructible -> isDead() ) || actor -> pickable;
 		if ( corpseOrItem && actor->x == targetx && actor->y == targety ) {
-			engine.gui->message(TCODColor::lightGrey,"There's a %s here",actor->name);
+			engine.gui->message( worldEvents,"There's a %s here",actor->name);
 		}
 	}
 	owner->x=targetx;
@@ -233,12 +263,13 @@ std::shared_ptr<Actor> PlayerAi::choseFromInventory( std::shared_ptr<Actor> owne
 	static TCODConsole con(INVENTORY_WIDTH,INVENTORY_HEIGHT);
 
 	// display the inventory frame
-	con.setDefaultForeground(TCODColor(200,180,50));
+	con.setDefaultForeground( guiForeground );
+	con.setDefaultBackground( guiBackground );
 	con.printFrame(0,0,INVENTORY_WIDTH,INVENTORY_HEIGHT,true,
 		TCOD_BKGND_DEFAULT,"Your Inventory");
 
 	// display the items with their keyboard shortcut
-	con.setDefaultForeground(TCODColor::white);
+	con.setDefaultForeground( worldEvents );
 	int shortcut='a';
 	int y=1;
 	for ( auto &item : owner -> container -> inventory ) {
@@ -248,7 +279,7 @@ std::shared_ptr<Actor> PlayerAi::choseFromInventory( std::shared_ptr<Actor> owne
 	}
 
 	// blit the inventory console on the root console
-	TCODConsole::blit(&con, 0,0,INVENTORY_WIDTH,INVENTORY_HEIGHT,
+	TCODConsole::blit(&con, 0, 0, INVENTORY_WIDTH,INVENTORY_HEIGHT,
 		TCODConsole::root, engine.screenWidth/2 - INVENTORY_WIDTH/2,
 		engine.screenHeight/2-INVENTORY_HEIGHT/2);
 	TCODConsole::flush();
@@ -331,7 +362,7 @@ void NPCAi::moveOrTalk( std::shared_ptr<Actor> owner )
 		yVal = rng -> getInt( oY - 1, oY + 1 );
 		engine.map -> path -> compute( owner->x, owner->y, xVal, yVal );
 	} while( (xVal == owner -> x && yVal == owner -> y) && !(engine.map -> canWalk( xVal, yVal )) && engine.map -> path -> size() >= 4 );
-		
+
 	int nX, nY;
 
 	engine.map -> path -> get( 0, &nX, &nY );
@@ -340,7 +371,7 @@ void NPCAi::moveOrTalk( std::shared_ptr<Actor> owner )
 		engine.map -> path -> walk( &(owner -> x), &(owner -> y), true );
 	} else if( nX == engine.player -> x && nY == engine.player -> y )
 	{
-		engine.gui -> message( owner -> col, "Move!" );
+		engine.gui -> message( worldEvents, "The %s is becoming impatient.", owner -> name );
 	}
 
 }

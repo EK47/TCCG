@@ -1,10 +1,31 @@
+/*
+
+    The Calvin Chronicle's Game
+    Copyright (C) 2018 Ethan Kelly
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #include <stdio.h>
 #include <stdarg.h>
 #include "main.hpp"
 
-static const int PANEL_HEIGHT=20;
-static const int BAR_WIDTH=15;
-static const int MSG_X=BAR_WIDTH+2;
+static const int PANEL_HEIGHT=12;
+static const int BAR_WIDTH=engine.screenWidth;
+static const int HP_X=15;
+static const int MSG_X=HP_X + 2;
 static const int MSG_HEIGHT=PANEL_HEIGHT-1;
 
 Gui::Gui() {
@@ -22,7 +43,7 @@ void Gui::render() {
 	con->clear();
 
 	// draw the health bar
-	renderBar(1,1,BAR_WIDTH,"HP",engine.player->destructible->hp,
+	renderBar(1,1,HP_X,"HP",engine.player->destructible->hp,
 		engine.player->destructible->maxHp,
 		TCODColor::lightRed,TCODColor::darkerRed);
 
@@ -92,7 +113,7 @@ void Gui::renderMouseLook() {
 		}
 	}
 	// display the list of actors under the mouse cursor
-	con->setDefaultForeground(TCODColor::lightGrey);
+	con->setDefaultForeground( worldEvents );
 	con->print(1,0,buf);
 }
 

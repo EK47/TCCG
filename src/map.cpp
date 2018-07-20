@@ -1,19 +1,32 @@
+/*
+
+    The Calvin Chronicle's Game
+    Copyright (C) 2018 Ethan Kelly
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #include "main.hpp"
 
 Map::Map( int width, int height ) : width( width ), height( height )
 {
-    dungeonL1 = Mix_LoadMUS("../assets/music/LoneBit.mp3");
-    if(Mix_PlayMusic( dungeonL1, -1) ==-1)
-    {
-        printf("Mix_PlayMusic: %s\n", Mix_GetError());
-        // well, there's no music, but most games don't break without music...
-    }
-    Mix_VolumeMusic( 110 );
     tiles = new Tile[ width * height ];
     map = std::make_shared<TCODMap>( width, height );
     path = std::make_shared<TCODPath>( map.get(), 1.0f );
     TCODBsp bsp( 0, 0, width, height );
-    bsp.splitRecursive( NULL, 8, ROOM_MAX_SIZE, ROOM_MIN_SIZE, 1.5f, 1.5f );
+    bsp.splitRecursive( NULL, 6, ROOM_MAX_SIZE, ROOM_MIN_SIZE, 1.5f, 1.5f );
     BspListener listener( *this );
     bsp.traverseInvertedLevelOrder( &listener, NULL );
 }
@@ -21,8 +34,6 @@ Map::Map( int width, int height ) : width( width ), height( height )
 Map::~Map()
 {
     delete [] tiles;
-    Mix_HaltMusic();
-    delete dungeonL1;
 }
 
 bool Map::isWall(int x, int y) const 
@@ -42,11 +53,11 @@ bool Map::isInFov(int x, int y) const {
    return false;
 }
 
-bool Map::LivingThingInFov() const
+bool Map::EnemyInFov() const
 {
     for( auto &actor : engine.actors )
 	{
-		if( actor -> name != engine.player -> name && actor -> destructible != nullptr && actor -> destructible -> isAlive() && engine.map -> isInFov( actor -> x, actor -> y ) )
+		if( actor -> name != engine.player -> name && actor -> destructible != nullptr && actor -> destructible -> isAlive() && engine.map -> isInFov( actor -> x, actor -> y ) && dynamic_cast<MonsterAi*> ( actor -> ai.get() ) != nullptr )
 		{
             return true;
 		}
@@ -211,19 +222,14 @@ void Map::createRoom( bool first, int x1, int y1, int x2, int y2 )
 
 void Map::render() const
 {
-    static const TCODColor visibleWall( 50, 140, 50 );
-    static const TCODColor visibleGround( 60, 60, 60 );
-    static const TCODColor unseenWall = visibleWall * 0.5f;
-    static const TCODColor unseenGround = visibleGround * 0.5f;
-
-
     for( int x = 0; x < width; x++ )
     {
         for( int y = 0; y < height; y++ )
         {
-            if ( isInFov(x,y) ) {
-                TCODConsole::root->setCharForeground( x, y, isWall(x,y) ? visibleWall : visibleGround );
-                TCODConsole::root->setCharBackground( x, y, TCODColor( 20, 20, 20 ) );
+            if ( isInFov(x,y) )
+            {
+                TCODConsole::root->setCharForeground( x, y, isWall(x,y) ? dungeon1Wall : dungeon1Floor );
+                TCODConsole::root->setCharBackground( x, y, dungeon1Background );
                 if( isWall( x, y ) )
                 {
                     TCODConsole::root -> setChar( x, y, '#' );
@@ -232,21 +238,19 @@ void Map::render() const
                     TCODConsole::root -> setChar( x, y, 250 );
                 }
 
-            } else 
+            } else if ( isExplored(x, y) )
             {
-                if ( isExplored(x, y) ) {
-                    TCODConsole::root->setCharForeground(x, y, isWall(x,y) ? unseenWall : unseenGround );
-                    TCODConsole::root->setCharBackground( x, y, TCODColor( 10, 10, 10 ) );
-
-                    if( isWall( x, y ) )
-                    {
-                        TCODConsole::root -> setChar( x, y, '#' );
-                    } else
-                    {
-                        TCODConsole::root -> setChar( x, y, 250 );
-                    }
+                TCODConsole::root->setCharForeground(x, y, isWall(x,y) ? returnUnseen( dungeon1Wall ) : returnUnseen( dungeon1Floor ) );
+                TCODConsole::root->setCharBackground( x, y, returnUnseen( dungeon1Background ) );
+                
+                if( isWall( x, y ) )
+                {
+                    TCODConsole::root -> setChar( x, y, '#' );
+                } else
+                {
+                    TCODConsole::root -> setChar( x, y, 250 );
                 }
-            } 
+            }
         }
     }
 }

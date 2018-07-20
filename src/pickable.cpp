@@ -1,3 +1,23 @@
+/*
+
+    The Calvin Chronicle's Game
+    Copyright (C) 2018 Ethan Kelly
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+
 #include "main.hpp"
 
 void Pickable::drop( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer )
@@ -8,7 +28,7 @@ void Pickable::drop( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer
         engine.actors.push_back( owner );
         owner -> x = wearer -> x;
         owner -> y = wearer -> y;
-        engine.gui -> message( TCODColor::lightGrey, "%s drops a %s.", wearer -> name, owner -> name );
+        engine.gui -> message( worldEvents, "%s drops a %s.", wearer -> name, owner -> name );
     }
 }
 
@@ -43,7 +63,7 @@ bool Healer::use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer )
         float amountHealed = wearer -> destructible -> heal( amount );
         if( amountHealed > 0 )
         {
-            engine.gui -> message( TCODColor::lighterGrey ,"%s heals %g health", wearer->name, amountHealed);
+            engine.gui -> message( worldEvents,"%s heals %g health", wearer->name, amountHealed);
             return Pickable::use( owner, wearer );
         }
     }
@@ -60,11 +80,11 @@ bool LightningBolt::use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> we
     std::shared_ptr<Actor> closestMonster = engine.getClosestMonster( wearer -> x, wearer -> y, range );
     if( ! closestMonster )
     {
-        engine.gui -> message( TCODColor::lightGrey, "The spell fizzles without a target." );
+        engine.gui -> message(worldEvents, "The spell fizzles without a target." );
         return false;
     }
 
-    engine.gui -> message( TCODColor( 50, 100, 200 ), "A loud flash is seen as %s is struck with lightning!\n"
+    engine.gui -> message( TCODColor::cyan, "A loud flash is seen as %s is struck with lightning!\n"
         "It is hit for %g damage!", closestMonster -> name, damage );
 
     closestMonster -> destructible -> takeDamage( closestMonster, damage );
@@ -77,7 +97,7 @@ bool LightningBolt::use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> we
         TCODRandom *multRng = TCODRandom::getInstance();
         multiplier = sqrt( time );
         multiplier = multiplier / multRng -> getInt( 2, 4 );
-        renderLine( wearer, closestMonster, multiplier, TCODColor( 50, 150, 255 ) );
+        renderLine( wearer, closestMonster, multiplier, goodThing );
     }
 
     return Pickable::use( owner, wearer );
@@ -89,9 +109,10 @@ Fireball::Fireball(float range, float damage)
 }
 
 bool Fireball::use(std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer) {
-	engine.gui->message(TCODColor::cyan, "Hover over a target and left click to fire!");
+	engine.gui->message( guiForeground, "Hover over a target and left click to fire!");
 	int x,y;
-	if (! engine.pickATile(&x, &y, range * 2 ) ) {
+	if( !engine.pickATile(&x, &y, range, range * 2 ) )
+    {
 		return false;
 	}
 
@@ -115,10 +136,10 @@ Confuser::Confuser( int nbTurns, float range ) : nbTurns( nbTurns ), range( rang
 
 bool Confuser::use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer )
 {
-    engine.gui -> message( TCODColor::cyan, "Left-click an enemy to confuse it\nor right-click to cancel.");
+    engine.gui -> message( guiForeground, "Left-click an enemy to confuse it\nor right-click to cancel.");
     int x, y;
     std::shared_ptr<Ai> confusedAi;
-    if( ! engine.pickATile( &x, &y, range ) )
+    if( !engine.pickATile( &x, &y, 0.0, range ) )
     {
         return false;
     }
