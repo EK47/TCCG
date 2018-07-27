@@ -18,15 +18,20 @@
 
 */
 
+#ifndef gui_hpp
+#define gui_hpp
+#pragma once
+
 class Gui {
-public :
+public:
 	Gui();
 	~Gui();
 	void render();
+	void clear();
 	void message(const TCODColor &col, const char *text, ...);
-
-protected :
-	TCODConsole *con;
+	void renderLook( int x, int y );
+protected:
+	TCODConsole *guiCon;
 	struct Message {
 		char *text;
 		TCODColor col;
@@ -40,3 +45,5 @@ protected :
 		const TCODColor &backColor);
 	void renderMouseLook();
 };
+
+#endif

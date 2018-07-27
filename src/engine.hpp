@@ -35,20 +35,27 @@ public:
     std::vector<std::shared_ptr<Actor>> actors;
     std::shared_ptr<Actor> player;
     std::shared_ptr<Map> map;
+    std::shared_ptr<Camera> camera;
     int screenWidth;
     int screenHeight;
+    int FOVRadius;
     Gui *gui;
     TCOD_key_t lastKey;
     TCOD_mouse_t mouse;
 
     Engine( int screenWidth, int screenHeight );
     ~Engine();
+    void load();
+    void save();
     void update();
     void render();
     std::shared_ptr<Actor> getClosestMonster( int x, int y, float range ) const;
     std::shared_ptr<Actor> getActor( int x, int y ) const;
     float getMouseDistance( int cx, int cy );
     bool pickATile( int *x, int *y, float displayRange = 0.0f, float maxRange = 0.0f );
+
+    void adventureInit();
+    void restartAdventure();
 private:
     bool computeFov;
 };

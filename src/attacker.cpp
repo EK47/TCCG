@@ -29,7 +29,7 @@ Attacker::Attacker( float power ) : power( power )
 void Attacker::attack( std::shared_ptr<Actor> attacker, std::shared_ptr<Actor> target)
 {
 	if ( target->destructible && !target->destructible->isDead() )
-	{
+	{	
 		// If the strength of the owner is larger than the target
 		if ( power - target -> destructible -> defense > 0 )
 		{

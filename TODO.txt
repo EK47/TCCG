@@ -5,19 +5,45 @@ The Death Chase element - On reaching 0 HP, you are not dead, but you are chased
 by death. You die once he reaches you. The only way to avoid your fate is to somehow
 get your HP back up to max.
 
+Custom in-game programming language. Custom world physics based upon 
+real life electrical, water, and light physics, but easier to implement.
 
 ISSUES / FEATURES:
+
+Add a main menu
+
+Fix the AI segfault issue. It happens rarely, but it happens often enough to be annoying.
+Possibly Fixed?
+
+Make a save system
+
+Make a tile flash between all beings in said tile.
+
+Add attack speed, so the player doesn't always attack first.
+
+Implement a multi-floor system, each floor being a randomly generated. Stairs are linked, not just stair locations.
+Find out if it is possible, with the current system, to have a destructible environment.
+
+Make a better *all* generation system.
+It should be based on a set of limits for each floor: Danger factor, item factor, etc.
+RNG is still present, and each item has a value assigned to it. Once the floor's {BLANK} value reaches maximum,
+generation of whatever increases that factor stops.
+
+Dynamic lighting
 
 Make a wait feature that goes until all health is
 restored, or until a creature is seen in FOV.
 
-Fix the magic number FOV problem :p
+Make creature patrolling, so they walk around and stuff.
 
-Add doors in the random generation system.
-
-Adjust autoheal to be more consistent
+? Add doors in the random generation system ?
 
 Implement more creatures, potions, and maybe use
 the random potion / scroll name feature.
 
+? Creatures have hearing ranges, and fighting heard in said radius attracts creature to last known location ?
+
 Work on REXPaint art.
+
+Creatures have a measure of closeness to you vs. your time travelling to an item. If they detect you are going for an item,
+they try to steal said item ( if they are intelligent, like Goblins ). Djikstra Maps!

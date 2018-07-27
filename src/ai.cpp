@@ -30,6 +30,7 @@ MonsterAi::~MonsterAi()
 { }
 
 void MonsterAi::update( std::shared_ptr<Actor> owner ) {
+	
 	// If the actor can die, and the monster is dead, stop updating.
 	if ( owner->destructible && owner->destructible->isDead() ) {
     	return;
@@ -49,7 +50,7 @@ void MonsterAi::update( std::shared_ptr<Actor> owner ) {
 	owner -> destructible -> naturalHeal( owner, owner -> turnSinceFight );
 }
 
-void MonsterAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int targety)
+void MonsterAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int targety )
 {
 	// Compute the path from the current position to the target.
 	engine.map -> path -> compute( owner->x, owner->y, targetx, targety );
@@ -104,7 +105,7 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
     }
 
 	int dx = 0, dy = 0;
-
+	// Find out which key the player pressed last
 	switch(engine.lastKey.c)
 	{
 		case 'k':
@@ -146,7 +147,7 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 		// Rest until fully healed
 		case 't':
 		{
-			// Extremely rudimentary and should be changed soon
+			// Extremely rudimentary and should be changed soon. Doesn't make time pass, just one turn
 			if( !(engine.map -> EnemyInFov()) )
 			{
 				if( owner -> destructible -> hp == owner -> destructible -> maxHp )
@@ -201,8 +202,10 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 		{
 			std::shared_ptr<Actor> item = choseFromInventory( owner );
 			if ( item ) {
-				item->pickable->use( item, owner );
-				engine.gameStatus=Engine::NEW_TURN;
+				if( item -> pickable -> use( item, owner ) )
+				{
+					engine.gameStatus=Engine::NEW_TURN;
+				}
 			}
 		}
 		break;
@@ -210,6 +213,11 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 		default: break;
 	}
 
+	// Allow you to look around using the camera.
+	if( engine.lastKey.shift && engine.lastKey.c == ';' )
+	{
+		engine.camera -> moveAround();
+	}
 
     if (dx != 0 || dy != 0) {
 		if( !engine.map -> isWall( owner -> x + dx, owner -> y + dy ) )
@@ -269,7 +277,6 @@ std::shared_ptr<Actor> PlayerAi::choseFromInventory( std::shared_ptr<Actor> owne
 		TCOD_BKGND_DEFAULT,"Your Inventory");
 
 	// display the items with their keyboard shortcut
-	con.setDefaultForeground( worldEvents );
 	int shortcut='a';
 	int y=1;
 	for ( auto &item : owner -> container -> inventory ) {
@@ -361,7 +368,7 @@ void NPCAi::moveOrTalk( std::shared_ptr<Actor> owner )
     	xVal = rng -> getInt( oX - 2, oX + 1 );
 		yVal = rng -> getInt( oY - 1, oY + 1 );
 		engine.map -> path -> compute( owner->x, owner->y, xVal, yVal );
-	} while( (xVal == owner -> x && yVal == owner -> y) && !(engine.map -> canWalk( xVal, yVal )) && engine.map -> path -> size() >= 4 );
+	} while( (xVal == owner -> x && yVal == owner -> y) || !(engine.map -> canWalk( xVal, yVal )) );
 
 	int nX, nY;
 
@@ -369,9 +376,6 @@ void NPCAi::moveOrTalk( std::shared_ptr<Actor> owner )
 	if( engine.map->canWalk( nX, nY ) )
 	{
 		engine.map -> path -> walk( &(owner -> x), &(owner -> y), true );
-	} else if( nX == engine.player -> x && nY == engine.player -> y )
-	{
-		engine.gui -> message( worldEvents, "The %s is becoming impatient.", owner -> name );
 	}
 
 }

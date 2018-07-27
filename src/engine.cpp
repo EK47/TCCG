@@ -19,7 +19,6 @@
 */
 
 #include "main.hpp"
-#include <unistd.h>
 
 static const bool FULLSCREEN = false;
 
@@ -29,15 +28,10 @@ Engine::Engine( int screenWidth, int screenHeight ) : gameStatus( STARTUP ), scr
     TCODSystem::setFps( 60 );
     TCODConsole::initRoot( screenWidth, screenHeight, "The Calvin Chronicles Game", FULLSCREEN );
     TCODConsole::setCustomFont("terminal16x16_gs_ro.png", TCOD_FONT_TYPE_GREYSCALE | TCOD_FONT_LAYOUT_ASCII_INROW );
-    // Creates the player
-    player = std::make_shared<Actor>( 1, 1, '@', "Calvin", calvin1 );
-    player -> destructible = std::make_shared<PlayerDestructible>( 30, 2, "Your Corpse" );
-    player -> attacker = std::make_shared<Attacker>( 5 );
-    player -> ai = std::make_shared<PlayerAi>();
-    player -> container = std::make_shared<Container>( 10 );
-    actors.push_back( player );
-    map = std::make_unique<Map>( (3 * screenWidth ) / 4, ( 3 * screenHeight ) / 4 );
-    gui = new Gui();
+    // Init Adventure Calvin's game
+    adventureInit();
+    // FOV stuff
+    FOVRadius = 15;
 }
 
 Engine::~Engine()
@@ -50,26 +44,27 @@ void Engine::update() {
 	if ( gameStatus == STARTUP ) map->computeFov();
    	gameStatus=IDLE;
     TCODSystem::checkForEvent(TCOD_EVENT_KEY_PRESS|TCOD_EVENT_MOUSE,&lastKey,&mouse);
-    player->update( player );
+    player -> update( player );
     if ( gameStatus == NEW_TURN ) {
 	    for ( auto &actor : actors ) {
-	        if ( actor->name != player -> name && actor->destructible ) {
+	        if ( actor->name != player -> name && actor->destructible && actor->ai )
+            {
 	            if( !actor->destructible->isDead() )
                 {
                     actor->update( actor );
-                    map -> map -> setProperties( actor -> x, actor -> y, true, false );
                 }
 	        }
 	    }
-        for( auto &actor : actors )
+        /*for( auto &actor : actors )
         {
-            if ( actor->name != player -> name && actor->destructible ) {
+            if ( actor->name != player -> name && actor->destructible && actor->ai )
+            {
 	            if( !actor->destructible->isDead() )
                 {
                     map -> map -> setProperties( actor -> x, actor -> y, true, true );
                 }
 	        }      
-        }
+        }*/
 	}
 }
 
@@ -94,6 +89,7 @@ void Engine::render()
         }
     }
     player -> render();
+    camera -> render();
     gui -> render();
 }
 
@@ -138,38 +134,37 @@ float Engine::getMouseDistance( int cx, int cy )
 
 bool Engine::pickATile(int *x, int *y, float displayRange, float maxRange ) {
 	while ( !TCODConsole::isWindowClosed() ) {
-		render();
+        render();
 		// Highlight the possible range
-		for (int cx = 0; cx < map->width; cx++) {
-			for (int cy=0; cy < map->height; cy++) {
-				if ( map->isInFov( cx, cy ) && ( maxRange == 0 || player->getDistance(cx,cy) <= maxRange) )
+		for (int cx = 0; cx < camera->cameraWidth; cx++) {
+			for (int cy=0; cy < camera->cameraHeight; cy++) {
+				if ( map->isInFov( cx + camera -> topLeftX, cy + camera -> topLeftY ) && ( maxRange == 0 || player->getDistance(cx + camera -> topLeftX, cy + camera -> topLeftY ) <= maxRange) )
                 {
-                    TCODColor col = TCODConsole::root->getCharBackground(cx,cy);
+                    TCODColor col = engine.camera -> cameraConsole -> getCharBackground( cx, cy );
 					col = col * 1.4f;
-					TCODConsole::root->setCharBackground( cx, cy, col);
+					engine.camera -> cameraConsole ->setCharBackground( cx, cy, col );
 				}
-                if( displayRange != 0 && ( ( getMouseDistance( cx, cy ) <= displayRange ) && player -> getDistance( mouse.cx, mouse.cy ) <= maxRange ) )
+                if( displayRange != 0 && ( ( getMouseDistance( cx, cy ) <= displayRange ) && player -> getDistance( mouse.cx + camera -> topLeftX, mouse.cy + camera -> topLeftY ) <= maxRange ) )
                 {
-                    TCODColor col = TCODConsole::root -> getCharBackground( cx, cy );
-                    col = col * 1.25f;
-                    TCODConsole::root -> setCharBackground( cx, cy, col );
+                    TCODColor col = engine.camera -> cameraConsole -> getCharBackground( cx, cy );
+                    col = col * 1.4f;
+                    engine.camera -> cameraConsole -> setCharBackground( cx, cy, col );
                 }
 			}
         }
-        
         TCODSystem::checkForEvent( TCOD_EVENT_ANY,&lastKey,&mouse );
-        if( map->isInFov(mouse.cx,mouse.cy) && ( maxRange == 0 || player->getDistance(mouse.cx,mouse.cy) <= maxRange ) ) {
-			TCODConsole::root->setCharBackground(mouse.cx,mouse.cy,TCODColor::white);
+        if( map->isInFov( mouse.cx + camera -> topLeftX, mouse.cy + camera -> topLeftY ) && ( maxRange == 0 || player->getDistance( mouse.cx + camera -> topLeftX, mouse.cy + camera -> topLeftY ) <= maxRange ) ) {
+			engine.camera -> cameraConsole ->setCharBackground(mouse.cx, mouse.cy, TCODColor::white);
 			if ( mouse.lbutton_pressed ) {
-				*x=mouse.cx;
-				*y=mouse.cy;
+				*x=mouse.cx + camera -> topLeftX;
+				*y=mouse.cy + camera -> topLeftY;
 				return true;
 			}
-		} 
+		}
 		if ( mouse.rbutton_pressed ) {
 			return false;
 		}
-		TCODConsole::flush();
+        TCODConsole::flush();
 	}
 	return false;
 }

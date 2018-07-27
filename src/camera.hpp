@@ -18,9 +18,24 @@
 
 */
 
-#include "main.hpp"
+#ifndef camera_hpp
+#define camera_hpp
 
-TCODColor returnUnseen( const TCODColor &col )
+class Camera
 {
-    return col * 0.5;
-}
+public:
+    int cameraWidth, cameraHeight;
+    int cameraPosX, cameraPosY;
+    int topLeftX, topLeftY;
+    bool lookMode;
+    TCODConsole *cameraConsole;
+    Camera( int width, int height, bool mainCamera );
+    ~Camera();
+    void render();
+    void playerOutRange();
+    void moveAround();
+private:
+
+};
+
+#endif

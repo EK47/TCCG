@@ -22,9 +22,11 @@
 
 Map::Map( int width, int height ) : width( width ), height( height )
 {
+    mapConsole = new TCODConsole( width, height );
     tiles = new Tile[ width * height ];
     map = std::make_shared<TCODMap>( width, height );
     path = std::make_shared<TCODPath>( map.get(), 1.0f );
+    // generateDungeon( 10 );
     TCODBsp bsp( 0, 0, width, height );
     bsp.splitRecursive( NULL, 6, ROOM_MAX_SIZE, ROOM_MIN_SIZE, 1.5f, 1.5f );
     BspListener listener( *this );
@@ -33,6 +35,7 @@ Map::Map( int width, int height ) : width( width ), height( height )
 
 Map::~Map()
 {
+    delete mapConsole;
     delete [] tiles;
 }
 
@@ -159,11 +162,195 @@ void Map::addItem( int x, int y )
     }
 }
 
-void Map::computeFov() {        // No matter what I do, this has to be a magic number
-   map -> computeFov( engine.player -> x, engine.player -> y, 10, true, FOV_SHADOW );
+void Map::computeFov() {
+   map -> computeFov( engine.player -> x, engine.player -> y, engine.FOVRadius, true, FOV_SHADOW );
+}
+
+void Map::getPointInCircle( int radius, int *x, int *y ) const
+{
+    // This gets a random point in a circle, and returns the cartesian coordinates for said point.
+    float randFloat = ((float) rand()) / (float) RAND_MAX;
+    float r = radius * sqrt( randFloat );
+    float theta = randFloat * 2 * M_PI;
+    *x = (int)floor( r * cos( theta ) );
+    *y = (int)floor( r * sin( theta ) );
+}
+
+void Map::dig( int x1, int y1, int x2, int y2 )
+{
+    if( x2 < x1 )
+    {
+        std::swap( x2, x1 );
+    }
+    if( y2 < y1 )
+    {
+        std::swap( y2, y1 );
+    }
+
+    for( int tilex = x1; tilex <= x2; tilex++ )
+    {
+        for( int tiley = y1; tiley <= y2; tiley++ )
+        {
+            map -> setProperties( tilex, tiley, true, true );
+        }
+    }
+}
+
+void Map::createRoom( bool first, int x1, int y1, int x2, int y2 )
+{
+    TCODRandom *rng = TCODRandom::getInstance();
+    dig( x1, y1, x2, y2 );
+    if( first )
+    {
+        engine.player -> x = ( x1 + x2 ) / 2;
+        engine.player -> y = ( y1 + y2 ) / 2;
+    } else
+    {
+        int nbMonsters = rng -> getInt( 0, MAX_ROOM_MONSTERS );
+        while( nbMonsters > 0 )
+        {
+            std::uniform_int_distribution<> xdistr( x1, x2 );
+            std::uniform_int_distribution<> ydistr( y1, y2 );
+            int x = rng -> getInt( x1, x2 );
+            int y = rng -> getInt( y1, y2 );
+            if( canWalk( x, y ) )
+            {
+                addMonster( x, y );
+            }
+            nbMonsters--;
+        }
+
+        int nbItems = rng -> getInt( 0, MAX_ROOM_ITEMS );
+        while( nbItems > 0 )
+        {
+            int x = rng -> getInt( x1, x2 );
+            int y = rng -> getInt( y1, y2 );
+            if( canWalk( x, y ) )
+            {
+                addItem( x, y );
+            }
+            nbItems--;
+        }
+    }
+}
+
+void Map::generateDungeon( int nRooms )
+{
+    std::vector<int> roomX;
+    std::vector<int> roomY;
+    std::vector<int> roomWidth;
+    std::vector<int> roomHeight;
+    // Randomly generate rooms
+    std::mt19937 eng( seed );
+    std::uniform_int_distribution<> roomXdistr( 0, width );
+    std::uniform_int_distribution<> roomYdistr( 0, height );
+    std::uniform_int_distribution<> roomHeightdistr( 4, 16 );
+    std::uniform_int_distribution<> roomWidthdistr( 4, 16 );
+    for( int i = 0; i < nRooms; i++ )
+    {
+        roomX.push_back( roomXdistr( eng ) );
+        roomY.push_back( roomYdistr( eng ) );
+        roomWidth.push_back( roomWidthdistr( eng ) );
+        roomHeight.push_back( roomHeightdistr( eng ) );
+    }
+    // Remove any overlapping rooms and any outside of the map.
+    for( int i = 0; i < roomX.size() - 1; i++ )
+    {
+        if( ( roomX[i] >= roomX[ i + 1 ] && roomX[i] <= roomX[ i + 1 ] + roomWidth[ i + 1 ] ) && ( roomY[i] >= roomY[ i + 1 ] && roomY[i] <= roomY[ i + 1 ] + roomHeight[i] )
+        || ( roomX[i] + roomWidth[i] >= roomX[ i + 1 ] && roomX[i] + roomWidth[i] <= roomX[ i + 1 ] + roomWidth[ i + 1 ] ) && ( roomY[i] >= roomY[ i + 1 ] && roomY[i] <= roomY[ i + 1 ] + roomHeight[i] )
+        || ( roomX[i] >= roomX[ i + 1 ] && roomX[i] <= roomX[ i + 1 ] + roomWidth[ i + 1 ] ) && ( roomY[i] + roomHeight[i] >= roomY[ i + 1 ] && roomY[i] + roomHeight[i] <= roomY[ i + 1 ] + roomHeight[i] )
+        || ( roomX[i] + roomWidth[i] >= roomX[ i + 1 ] && roomX[i] + roomWidth[i] <= roomX[ i + 1 ] + roomWidth[ i + 1 ] ) && ( roomY[i] + roomHeight[i] >= roomY[ i + 1 ] && roomY[i] + roomHeight[i] <= roomY[ i + 1 ] + roomHeight[i] )
+        )
+        {
+            roomX.erase( roomX.begin() + i );
+            roomY.erase( roomY.begin() + i );
+            roomWidth.erase( roomWidth.begin() + i );
+            roomHeight.erase( roomHeight.begin() + i );
+        }
+    }
+    // Build and connect rooms.
+
+    createRoom( true, roomX[0], roomY[0], roomX[0] + roomWidth[0], roomY[0] + roomHeight[0] );
+    for( int i = 1; i < roomX.size(); i++ )
+    {
+        createRoom( false, roomX[i], roomY[i], roomX[i] + roomWidth[i], roomY[i] + roomHeight[i] );
+        // Create a corridor
+        dig( ( roomX[ i - 1 ] + ( roomWidth[ i - 1 ] / 2 ) ), ( roomY[ i - 1 ] + ( roomHeight[ i - 1 ] / 2 ) ), ( roomX[ i ] + ( roomWidth[ i ] / 2 ) ), ( roomY[ i ] + ( roomHeight[ i ] / 2 ) ) );
+
+    }
+}
+
+void Map::render() const
+{
+    for( int x = 0; x < width; x++ )
+    {
+        for( int y = 0; y < height; y++ )
+        {
+            if ( isInFov(x,y) )
+            {
+                mapConsole->setCharForeground( x, y, isWall(x,y) ? dungeon1Wall : dungeon1Floor );
+                mapConsole->setCharBackground( x, y, dungeon1Background );
+                if( isWall( x, y ) )
+                {
+                    mapConsole -> setChar( x, y, '#' );
+                } else
+                {
+                    mapConsole -> setChar( x, y, 250 );
+                }
+                
+            } else if ( isExplored(x, y) )
+            {
+                mapConsole->setCharForeground(x, y, isWall(x,y) ? returnUnseen( dungeon1Wall ) : returnUnseen( dungeon1Floor ) );
+                mapConsole->setCharBackground( x, y, returnUnseen( dungeon1Background ) );
+                
+                if( isWall( x, y ) )
+                {
+                    mapConsole -> setChar( x, y, '#' );
+                } else
+                {
+                    mapConsole -> setChar( x, y, 250 );
+                }
+            }
+        }
+    }
 }
 
 
+// Old Render Code
+/*
+    for( int x = 0; x < width; x++ )
+    {
+        for( int y = 0; y < height; y++ )
+        {
+            if ( isInFov(x,y) )
+            {
+                TCODConsole::root->setCharForeground( x, y, isWall(x,y) ? dungeon1Wall : dungeon1Floor );
+                TCODConsole::root->setCharBackground( x, y, dungeon1Background );
+                if( isWall( x, y ) )
+                {
+                    TCODConsole::root -> setChar( x, y, '#' );
+                } else
+                {
+                    TCODConsole::root -> setChar( x, y, 250 );
+                }
+
+            } else if ( isExplored(x, y) )
+            {
+                TCODConsole::root->setCharForeground(x, y, isWall(x,y) ? returnUnseen( dungeon1Wall ) : returnUnseen( dungeon1Floor ) );
+                TCODConsole::root->setCharBackground( x, y, returnUnseen( dungeon1Background ) );
+                
+                if( isWall( x, y ) )
+                {
+                    TCODConsole::root -> setChar( x, y, '#' );
+                } else
+                {
+                    TCODConsole::root -> setChar( x, y, 250 );
+                }
+            }
+        }
+    }
+*/
+/*
 void Map::dig( int x1, int y1, int x2, int y2 )
 {
     if( x2 < x1 )
@@ -219,38 +406,4 @@ void Map::createRoom( bool first, int x1, int y1, int x2, int y2 )
         }
     }
 }
-
-void Map::render() const
-{
-    for( int x = 0; x < width; x++ )
-    {
-        for( int y = 0; y < height; y++ )
-        {
-            if ( isInFov(x,y) )
-            {
-                TCODConsole::root->setCharForeground( x, y, isWall(x,y) ? dungeon1Wall : dungeon1Floor );
-                TCODConsole::root->setCharBackground( x, y, dungeon1Background );
-                if( isWall( x, y ) )
-                {
-                    TCODConsole::root -> setChar( x, y, '#' );
-                } else
-                {
-                    TCODConsole::root -> setChar( x, y, 250 );
-                }
-
-            } else if ( isExplored(x, y) )
-            {
-                TCODConsole::root->setCharForeground(x, y, isWall(x,y) ? returnUnseen( dungeon1Wall ) : returnUnseen( dungeon1Floor ) );
-                TCODConsole::root->setCharBackground( x, y, returnUnseen( dungeon1Background ) );
-                
-                if( isWall( x, y ) )
-                {
-                    TCODConsole::root -> setChar( x, y, '#' );
-                } else
-                {
-                    TCODConsole::root -> setChar( x, y, 250 );
-                }
-            }
-        }
-    }
-}
+*/

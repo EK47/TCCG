@@ -29,18 +29,23 @@ static const int MSG_X=HP_X + 2;
 static const int MSG_HEIGHT=PANEL_HEIGHT-1;
 
 Gui::Gui() {
-	con = new TCODConsole(engine.screenWidth,PANEL_HEIGHT);
+	guiCon = new TCODConsole(engine.screenWidth,PANEL_HEIGHT);
 }
 
 Gui::~Gui() {
-	delete con;
+	delete guiCon;
+	log.clear();
+}
+
+void Gui::clear()
+{
 	log.clear();
 }
 
 void Gui::render() {
 	// clear the GUI console
-	con->setDefaultBackground(TCODColor::black);
-	con->clear();
+	guiCon->setDefaultBackground(TCODColor::black);
+	guiCon->clear();
 
 	// draw the health bar
 	renderBar(1,1,HP_X,"HP",engine.player->destructible->hp,
@@ -51,8 +56,8 @@ void Gui::render() {
 	int y=1;
 	float colorCoef=0.4f;
 	for ( auto &msg : log ) {
-		con->setDefaultForeground( msg->col * colorCoef);
-		con->print(MSG_X,y, msg->text);
+		guiCon->setDefaultForeground( msg->col * colorCoef);
+		guiCon->print(MSG_X,y, msg->text);
 		y++;
 		if ( colorCoef < 1.0f ) {
 			colorCoef+=0.3f;
@@ -61,9 +66,12 @@ void Gui::render() {
 
 	// mouse look
 	renderMouseLook();
-
+	if( engine.camera -> lookMode )
+	{
+		renderLook( engine.camera -> cameraWidth / 2, engine.camera -> cameraHeight / 2 );
+	}
 	// blit the GUI console on the root console
-	TCODConsole::blit(con,0,0,engine.screenWidth,PANEL_HEIGHT,
+	TCODConsole::blit(guiCon,0,0,engine.screenWidth,PANEL_HEIGHT,
 		TCODConsole::root,0,engine.screenHeight-PANEL_HEIGHT);
 }
 
@@ -71,18 +79,18 @@ void Gui::renderBar(int x, int y, int width, const char *name,
 	float value, float maxValue, const TCODColor &barColor,
 	const TCODColor &backColor) {
 	// fill the background
-	con->setDefaultBackground(backColor);
-	con->rect(x,y,width,1,false,TCOD_BKGND_SET);
+	guiCon->setDefaultBackground(backColor);
+	guiCon->rect(x,y,width,1,false,TCOD_BKGND_SET);
 
 	int barWidth = (int)(value / maxValue * width);
 	if ( barWidth > 0 ) {
 		// draw the bar
-		con->setDefaultBackground(barColor);
-		con->rect(x,y,barWidth,1,false,TCOD_BKGND_SET);
+		guiCon->setDefaultBackground(barColor);
+		guiCon->rect(x,y,barWidth,1,false,TCOD_BKGND_SET);
 	}
 	// print text on top of the bar
-	con->setDefaultForeground(TCODColor::white);
-	con->printEx(x+width/2,y,TCOD_BKGND_NONE,TCOD_CENTER,
+	guiCon->setDefaultForeground(TCODColor::white);
+	guiCon->printEx(x+width/2,y,TCOD_BKGND_NONE,TCOD_CENTER,
 		"%s : %g/%g", name, value, maxValue);
 }
 
@@ -95,7 +103,7 @@ Gui::Message::~Message() {
 }
 
 void Gui::renderMouseLook() {
-	if (! engine.map->isInFov(engine.mouse.cx, engine.mouse.cy)) {
+	if (! engine.map->isInFov(engine.mouse.cx + engine.camera -> topLeftX, engine.mouse.cy + engine.camera -> topLeftY ) ) {
 		// if mouse is out of fov, nothing to render
 		return;
 	}
@@ -103,7 +111,7 @@ void Gui::renderMouseLook() {
 	bool first=true;
 	for ( auto &actor : engine.actors ) {
 		// find actors under the mouse cursor
-		if (actor->x == engine.mouse.cx && actor->y == engine.mouse.cy ) {
+		if ( actor->x == engine.mouse.cx + engine.camera -> topLeftX && actor->y == engine.mouse.cy + engine.camera -> topLeftY ) {
 			if (! first) {
 				strcat(buf,", ");
 			} else {
@@ -113,8 +121,35 @@ void Gui::renderMouseLook() {
 		}
 	}
 	// display the list of actors under the mouse cursor
-	con->setDefaultForeground( worldEvents );
-	con->print(1,0,buf);
+	guiCon->setDefaultForeground( worldEvents );
+	guiCon->print(1,0,buf);
+}
+
+// Renders the area under the current camera cursor
+void Gui::renderLook( int x, int y )
+{
+	if( !engine.map -> isInFov( x + engine.camera -> topLeftX, y + engine.camera -> topLeftY ) )
+	{
+		return;
+	}
+	char buf[256] = "";
+	bool first = true;
+	for( auto &actor : engine.actors )
+	{
+		if( actor -> x == x + engine.camera -> topLeftX && actor -> y == y + engine.camera -> topLeftY )
+		{
+			if( !first )
+			{
+				strcat( buf, ", " );
+			} else
+			{
+				first = false;
+			}
+			strcat( buf, actor -> name );
+		}
+	}
+	guiCon -> setDefaultForeground( worldEvents );
+	guiCon -> print( 1, 0, buf );
 }
 
 void Gui::message(const TCODColor &col, const char *text, ...) {

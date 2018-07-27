@@ -20,20 +20,19 @@
 
 #include "main.hpp"
 
-
-
 void renderLine( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> target, float multiplier, const TCODColor &col )
 {
+    engine.render();
     // Current x and y;
-    int cX = owner -> x;
-    int cY = owner -> y;
-    TCODLine::init( cX, cY, target -> x, target -> y );
+    int cX = owner -> x - engine.camera -> topLeftX;
+    int cY = owner -> y - engine.camera -> topLeftY;
+    TCODLine::init( cX, cY, target -> x - engine.camera -> topLeftX, target -> y - engine.camera -> topLeftY );
     do
     {
         TCODRandom *rng = TCODRandom::getInstance();
         float val = rng -> getInt( 1, 3 );
         val = val * ( 0.2f * multiplier );
-        TCODConsole::root -> setCharBackground( cX, cY, col * val );
+        engine.camera -> cameraConsole -> setCharBackground( cX, cY, col * val );
     } while( !TCODLine::step( &cX, &cY ) );
     TCODConsole::flush();
 }

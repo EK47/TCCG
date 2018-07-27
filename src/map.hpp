@@ -20,6 +20,7 @@
 
 #ifndef map_hpp
 #define map_hpp
+#pragma once
 
 static const int ROOM_MAX_SIZE = 15;
 static const int ROOM_MIN_SIZE = 5;
@@ -38,6 +39,8 @@ public:
     int width, height;
     std::shared_ptr<TCODPath> path;
     std::shared_ptr<TCODMap> map;
+    TCODConsole *mapConsole;
+    long seed;
     Map( int width, int height );
     ~Map();
     bool isWall( int x, int y ) const;
@@ -45,6 +48,7 @@ public:
     bool EnemyInFov() const;
     bool isExplored( int x, int y ) const;
     bool canWalk( int x, int y ) const;
+    void getPointInCircle( int radius, int *x, int *y ) const;
     void addMonster( int x, int y );
     void addItem( int x, int y );
     void computeFov();
@@ -52,19 +56,11 @@ public:
 protected:
     Tile *tiles;
     friend class BspListener;
+    void generateDungeon( int nRooms );
     void dig( int x1, int y1, int x2, int y2 );
     void createRoom( bool first, int x1, int y1, int x2, int y2 );
 };
 
-/*
-class PathListener : public ITCODPathCallback {
-public:
-    float getWalkCost(int xFrom, int yFrom, int xTo, int yTo, void *userData ) const
-    {
-        
-    }
-};
-*/
 
 class BspListener : public ITCODBspCallback
 {

@@ -83,15 +83,11 @@ bool LightningBolt::use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> we
         engine.gui -> message(worldEvents, "The spell fizzles without a target." );
         return false;
     }
-
     engine.gui -> message( TCODColor::cyan, "A loud flash is seen as %s is struck with lightning!\n"
         "It is hit for %g damage!", closestMonster -> name, damage );
-
     closestMonster -> destructible -> takeDamage( closestMonster, damage );
-
     engine.render();
-
-    for( int time = 1; time < 150; time++ )
+    for( int time = 0; time < 150; time++ )
     {
         float multiplier { 0 };
         TCODRandom *multRng = TCODRandom::getInstance();
@@ -99,7 +95,6 @@ bool LightningBolt::use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> we
         multiplier = multiplier / multRng -> getInt( 2, 4 );
         renderLine( wearer, closestMonster, multiplier, goodThing );
     }
-
     return Pickable::use( owner, wearer );
 }
 
@@ -109,13 +104,12 @@ Fireball::Fireball(float range, float damage)
 }
 
 bool Fireball::use(std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer) {
-	engine.gui->message( guiForeground, "Hover over a target and left click to fire!");
+	engine.gui->message( guiForeground, "Hover over a target and left-click to fire!\nRight-click to cancel.");
 	int x,y;
 	if( !engine.pickATile(&x, &y, range, range * 2 ) )
     {
 		return false;
 	}
-
 	// burn everything in <range> (including player)
 	engine.gui->message(TCODColor::orange,"It implodes, setting everything %g blocks around it on fire!",range);
 	for ( auto &actor : engine.actors ) {

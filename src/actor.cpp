@@ -40,8 +40,8 @@ float Actor::getDistance( int cx, int cy ) const
 }
 
 void Actor::render() const {
-    TCODConsole::root->setChar( lastLocationX, lastLocationY, ch);
-    TCODConsole::root->setCharForeground( lastLocationX, lastLocationY, col);
+    engine.map -> mapConsole ->setChar( lastLocationX, lastLocationY, ch);
+    engine.map -> mapConsole ->setCharForeground( lastLocationX, lastLocationY, col);
 }
 
 void Actor::update( std::shared_ptr<Actor> owner ) {
