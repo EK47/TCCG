@@ -29,7 +29,9 @@ Actor::Actor(int x, int y, int ch, const char *name,
 }
 
 Actor::~Actor()
-{ }
+{
+    
+}
 
 // Find the distance between two points
 float Actor::getDistance( int cx, int cy ) const

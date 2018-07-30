@@ -22,8 +22,43 @@
 #define gui_hpp
 #pragma once
 
+class Menu
+{
+public:
+	Menu();
+	~Menu();
+	enum menuOptions 
+	{
+		NONE,
+		NEW_GAME,
+		CONTINUE,
+		OPTIONS,
+		CREDITS,
+		QUIT
+	};
+	enum optionOptions
+	{
+		ONONE,
+		CAMERA,
+		BACK,
+	};
+	void clear();
+	void addItem( menuOptions currentOption, optionOptions option, const char* label );
+	menuOptions pick();
+	optionOptions oPick();
+	struct MenuItem
+	{
+		menuOptions code;
+		optionOptions option;
+		const char *label;
+	};
+	std::vector<std::shared_ptr<MenuItem>> items;
+};
+
 class Gui {
 public:
+	Menu menu;
+	Menu options;
 	Gui();
 	~Gui();
 	void render();
@@ -31,7 +66,8 @@ public:
 	void message(const TCODColor &col, const char *text, ...);
 	void renderLook( int x, int y );
 protected:
-	TCODConsole *guiCon;
+	TCODConsole *guiConBottom;
+	TCODConsole *guiConRight;
 	struct Message {
 		char *text;
 		TCODColor col;
@@ -40,7 +76,7 @@ protected:
 	};
 	std::vector<std::shared_ptr<Message>> log;
 
-	void renderBar(int x, int y, int width, const char *name,
+	void renderBar(int x, int y, int width, int height, const char *name,
 		float value, float maxValue, const TCODColor &barColor,
 		const TCODColor &backColor);
 	void renderMouseLook();

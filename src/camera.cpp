@@ -20,7 +20,7 @@
 
 #include "main.hpp"
 
-Camera::Camera( int width, int height, bool mainCamera ) : lookMode( false )
+Camera::Camera( int width, int height, bool mainCamera ) : lookMode( false ), mainCamera( mainCamera )
 {
     cameraConsole = new TCODConsole( cameraWidth, cameraHeight );
     cameraWidth = width;
@@ -39,8 +39,14 @@ Camera::~Camera()
 
 void Camera::playerOutRange()
 {
-    topLeftX = std::min( std::max( engine.player -> x - (int)cameraWidth / 2, 0 ), engine.map -> width - cameraWidth );
-    topLeftY = std::min( std::max( engine.player -> y - (int)cameraHeight / 2, 0 ), engine.map -> height - cameraHeight ); 
+    topLeftX = engine.player -> x - (int)cameraWidth / 2;
+    topLeftY = engine.player -> y - (int)cameraHeight / 2;
+    
+    if( engine.trackPlayer )
+    {
+        topLeftX = std::min( std::max( engine.player -> x - (int)cameraWidth / 2, 0 ), engine.map -> width - cameraWidth );
+        topLeftY = std::min( std::max( engine.player -> y - (int)cameraHeight / 2, 0 ), engine.map -> height - cameraHeight ); 
+    }
 }
 
 void Camera::moveAround()
@@ -49,7 +55,6 @@ void Camera::moveAround()
     // Center the look 'x' on the player
     topLeftX = engine.player -> x - cameraWidth / 2;
     topLeftY = engine.player -> y - cameraHeight / 2;
-
     while( lookMode )
     {
         TCOD_key_t key = TCODConsole::checkForKeypress( TCOD_KEY_PRESSED );
@@ -63,15 +68,14 @@ void Camera::moveAround()
             case 'b': topLeftX -= 1; topLeftY += 1; break;
             case 'h': topLeftX -= 1; break;
             case 'y': topLeftX -= 1; topLeftY -= 1; break;
-            case 's': 
+            case ';': 
                 topLeftX = engine.player -> x - cameraWidth / 2;
                 topLeftY = engine.player -> y - cameraHeight / 2;
             break;
+            case '\'':
+                lookMode = false;
+            break;
             default: break;
-        }
-        if( key.vk == TCODK_ESCAPE )
-        {
-            lookMode = false;
         }
         TCODConsole::root -> clear();
         // Blit the map onto the camera
@@ -90,7 +94,10 @@ void Camera::moveAround()
 
 void Camera::render()
 {   
-    playerOutRange();
+    if( mainCamera )
+    {
+        playerOutRange();
+    }
     TCODConsole::blit( engine.map -> mapConsole, topLeftX, topLeftY, cameraWidth, cameraHeight, cameraConsole, 0, 0 );
     TCODConsole::blit( cameraConsole, 0, 0, cameraWidth, cameraHeight, TCODConsole::root, cameraPosX, cameraPosY );
 }

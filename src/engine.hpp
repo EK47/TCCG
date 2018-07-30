@@ -39,7 +39,8 @@ public:
     int screenWidth;
     int screenHeight;
     int FOVRadius;
-    Gui *gui;
+    bool trackPlayer;
+    std::shared_ptr<Gui> gui;
     TCOD_key_t lastKey;
     TCOD_mouse_t mouse;
 
@@ -58,6 +59,7 @@ public:
     void restartAdventure();
 private:
     bool computeFov;
+    int defaultMapSize;
 };
 
 extern Engine engine;

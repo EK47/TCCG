@@ -22,18 +22,17 @@
 #include <stdarg.h>
 #include "main.hpp"
 
-static const int PANEL_HEIGHT=12;
-static const int BAR_WIDTH=engine.screenWidth;
-static const int HP_X=15;
-static const int MSG_X=HP_X + 2;
-static const int MSG_HEIGHT=PANEL_HEIGHT-1;
+static const int HP_WIDTH = 26;
+static const int MSG_X = 1;
 
 Gui::Gui() {
-	guiCon = new TCODConsole(engine.screenWidth,PANEL_HEIGHT);
+	guiConBottom = new TCODConsole( "../assets/gui1.xp" );
+	guiConRight = new TCODConsole( "../assets/gui2.xp" );
 }
 
 Gui::~Gui() {
-	delete guiCon;
+	delete guiConBottom;
+	delete guiConRight;
 	log.clear();
 }
 
@@ -43,24 +42,27 @@ void Gui::clear()
 }
 
 void Gui::render() {
-	// clear the GUI console
-	guiCon->setDefaultBackground(TCODColor::black);
-	guiCon->clear();
+	// clear the GUI consoles
+	guiConBottom -> clear();
+	guiConRight -> clear();
+
+	guiConBottom -> loadXp( "../assets/gui1.xp" );
+	guiConRight -> loadXp( "../assets/gui2.xp" );
 
 	// draw the health bar
-	renderBar(1,1,HP_X,"HP",engine.player->destructible->hp,
+	renderBar( 2, 2, HP_WIDTH, 3, "HP", engine.player->destructible->hp,
 		engine.player->destructible->maxHp,
 		TCODColor::lightRed,TCODColor::darkerRed);
 
 	// draw the message log
 	int y=1;
-	float colorCoef=0.4f;
+	float colorCoef=0.5f;
 	for ( auto &msg : log ) {
-		guiCon->setDefaultForeground( msg->col * colorCoef);
-		guiCon->print(MSG_X,y, msg->text);
+		guiConBottom->setDefaultForeground( msg->col * colorCoef );
+		guiConBottom->print(MSG_X, y, msg->text);
 		y++;
 		if ( colorCoef < 1.0f ) {
-			colorCoef+=0.3f;
+			colorCoef+=0.05f;
 		}
 	}
 
@@ -71,26 +73,26 @@ void Gui::render() {
 		renderLook( engine.camera -> cameraWidth / 2, engine.camera -> cameraHeight / 2 );
 	}
 	// blit the GUI console on the root console
-	TCODConsole::blit(guiCon,0,0,engine.screenWidth,PANEL_HEIGHT,
-		TCODConsole::root,0,engine.screenHeight-PANEL_HEIGHT);
+	TCODConsole::blit( guiConBottom, 0, 0, engine.camera -> cameraWidth, 25, TCODConsole::root, 0, 75 );
+	TCODConsole::blit( guiConRight, 0, 0, engine.screenWidth - engine.camera -> cameraWidth, engine.screenHeight, TCODConsole::root, engine.camera -> cameraWidth, 0 );
 }
 
-void Gui::renderBar(int x, int y, int width, const char *name,
+void Gui::renderBar(int x, int y, int width, int height, const char *name,
 	float value, float maxValue, const TCODColor &barColor,
 	const TCODColor &backColor) {
 	// fill the background
-	guiCon->setDefaultBackground(backColor);
-	guiCon->rect(x,y,width,1,false,TCOD_BKGND_SET);
+	guiConRight->setDefaultBackground(backColor);
+	guiConRight->rect(x,y,width,height,false,TCOD_BKGND_SET);
 
 	int barWidth = (int)(value / maxValue * width);
 	if ( barWidth > 0 ) {
 		// draw the bar
-		guiCon->setDefaultBackground(barColor);
-		guiCon->rect(x,y,barWidth,1,false,TCOD_BKGND_SET);
+		guiConRight->setDefaultBackground(barColor);
+		guiConRight->rect(x,y,barWidth,height,false,TCOD_BKGND_SET);
 	}
 	// print text on top of the bar
-	guiCon->setDefaultForeground(TCODColor::white);
-	guiCon->printEx(x+width/2,y,TCOD_BKGND_NONE,TCOD_CENTER,
+	guiConRight->setDefaultForeground(TCODColor::white);
+	guiConRight->printEx(x+width/2,y+height/2,TCOD_BKGND_NONE,TCOD_CENTER,
 		"%s : %g/%g", name, value, maxValue);
 }
 
@@ -121,22 +123,18 @@ void Gui::renderMouseLook() {
 		}
 	}
 	// display the list of actors under the mouse cursor
-	guiCon->setDefaultForeground( worldEvents );
-	guiCon->print(1,0,buf);
+	guiConRight->setDefaultForeground( worldEvents );
+	guiConRight->print(2,51,buf);
 }
 
 // Renders the area under the current camera cursor
 void Gui::renderLook( int x, int y )
 {
-	if( !engine.map -> isInFov( x + engine.camera -> topLeftX, y + engine.camera -> topLeftY ) )
-	{
-		return;
-	}
 	char buf[256] = "";
 	bool first = true;
 	for( auto &actor : engine.actors )
 	{
-		if( actor -> x == x + engine.camera -> topLeftX && actor -> y == y + engine.camera -> topLeftY )
+		if( actor -> x == x + engine.camera -> topLeftX && actor -> y == y + engine.camera -> topLeftY && engine.map -> isInFov( x + engine.camera -> topLeftX, y + engine.camera -> topLeftY ) )
 		{
 			if( !first )
 			{
@@ -146,10 +144,23 @@ void Gui::renderLook( int x, int y )
 				first = false;
 			}
 			strcat( buf, actor -> name );
+		} else if( actor -> lastLocationX != NULL && actor -> lastLocationY != NULL )
+		{
+			if( actor -> lastLocationX == x + engine.camera -> topLeftX && actor -> lastLocationY == y + engine.camera -> topLeftY )
+			{
+				if( !first )
+				{
+					strcat( buf, ", " );
+				} else
+				{
+					first = false;
+				}
+				strcat( buf, actor -> name );
+			}
 		}
 	}
-	guiCon -> setDefaultForeground( worldEvents );
-	guiCon -> print( 1, 0, buf );
+	guiConRight -> setDefaultForeground( worldEvents );
+	guiConRight -> print( 2, 51, buf );
 }
 
 void Gui::message(const TCODColor &col, const char *text, ...) {
@@ -164,7 +175,7 @@ void Gui::message(const TCODColor &col, const char *text, ...) {
 	char *lineEnd;
 	do {
 		// make room for the new message
-		if ( log.size() == MSG_HEIGHT ) {
+		if ( log.size() == engine.screenHeight - engine.camera -> cameraHeight - 2 ) {
 			log.erase(begin(log));
 		}
 
@@ -181,4 +192,128 @@ void Gui::message(const TCODColor &col, const char *text, ...) {
 		// go to next line
 		lineBegin=lineEnd+1;
 	} while ( lineEnd );
+}
+
+	// 77, 57
+
+Menu::Menu()
+{
+
+}
+
+Menu::~Menu()
+{
+	clear();
+}
+
+void Menu::clear()
+{
+	items.clear();
+}
+
+void Menu::addItem( Menu::menuOptions code, Menu::optionOptions option, const char *label )
+{
+	std::shared_ptr<MenuItem> item = std::make_shared<MenuItem>();
+	item -> code = code;
+	item -> option = option;
+	item -> label = label;
+	items.push_back( item );
+}
+
+Menu::menuOptions Menu::pick()
+{
+    std::shared_ptr<TCODConsole> background = std::make_shared<TCODConsole>( "../assets/background.xp" );
+    int selectedItem = 0;
+	while( !TCODConsole::isWindowClosed() )
+    {
+		int currentOption = 0;
+
+        TCODConsole::blit( background.get(), 0, 0, 120, 100, TCODConsole::root, 0, 0 );
+		
+		for( auto item : items )
+		{
+			if( currentOption == selectedItem )
+			{
+				TCODConsole::root -> setDefaultForeground( TCODColor::grey );
+			} else
+			{
+				TCODConsole::root -> setDefaultForeground( TCODColor::white );
+			}
+			TCODConsole::root -> print( 77, 57 + currentOption * 2, item -> label );
+			currentOption++;
+		}
+
+        TCODConsole::flush();
+
+        TCOD_key_t key = TCODConsole::checkForKeypress( TCOD_KEY_PRESSED );
+        
+        switch( key.vk )
+        {
+            case TCODK_UP:
+                selectedItem--;
+				if( selectedItem < 0 )
+				{
+					selectedItem = items.size() - 1;
+				}
+            break;
+            case TCODK_DOWN:
+                selectedItem = ( selectedItem + 1 ) % items.size();
+            break;
+
+            case TCODK_ENTER:
+				return items.at( selectedItem ) -> code;
+            break;
+            default: break;
+        }
+    }
+	return menuOptions::NONE;
+}
+
+Menu::optionOptions Menu::oPick()
+{
+	std::shared_ptr<TCODConsole> option = std::make_shared<TCODConsole>( "../assets/options.xp" );
+	int selectedItem = 0;
+	while( !TCODConsole::isWindowClosed() )
+	{
+		int currentOption = 0;
+
+		TCODConsole::blit( option.get(), 0, 0, 43, 31, TCODConsole::root, 75, 47 );
+
+		for( auto item : items )
+		{
+			if( currentOption == selectedItem )
+			{
+				TCODConsole::root -> setDefaultForeground( TCODColor::grey );
+			} else
+			{
+				TCODConsole::root -> setDefaultForeground( TCODColor::white );
+			}
+			TCODConsole::root -> print( 77, 57 + currentOption * 2, item -> label );
+			currentOption++;
+		}
+
+		TCODConsole::flush();
+
+		TCOD_key_t key = TCODConsole::checkForKeypress( TCOD_KEY_PRESSED );
+
+		switch( key.vk )
+		{
+			case TCODK_UP:
+                selectedItem--;
+				if( selectedItem < 0 )
+				{
+					selectedItem = items.size() - 1;
+				}
+            break;
+            case TCODK_DOWN:
+                selectedItem = ( selectedItem + 1 ) % items.size();
+            break;
+
+            case TCODK_ENTER:
+				return items.at( selectedItem ) -> option;
+            break;
+            default: break;
+		}
+	}
+	return optionOptions::ONONE;
 }

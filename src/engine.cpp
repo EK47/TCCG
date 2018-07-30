@@ -22,28 +22,38 @@
 
 static const bool FULLSCREEN = false;
 
-Engine::Engine( int screenWidth, int screenHeight ) : gameStatus( STARTUP ), screenWidth( screenWidth ), screenHeight( screenHeight )
+Engine::Engine( int screenWidth, int screenHeight ) : gameStatus( STARTUP ), screenWidth( screenWidth ), screenHeight( screenHeight ), FOVRadius( 15 ), trackPlayer( true ), defaultMapSize( 200 )
 {
     // Limits FPS as to protect CPU usage
     TCODSystem::setFps( 60 );
     TCODConsole::initRoot( screenWidth, screenHeight, "The Calvin Chronicles Game", FULLSCREEN );
-    TCODConsole::setCustomFont("terminal16x16_gs_ro.png", TCOD_FONT_TYPE_GREYSCALE | TCOD_FONT_LAYOUT_ASCII_INROW );
-    // Init Adventure Calvin's game
-    adventureInit();
-    // FOV stuff
-    FOVRadius = 15;
+    if( std::fstream{"whathaveyoudone.txt"} )
+    {
+        TCODConsole::setCustomFont( "arial10x10.png", TCOD_FONT_LAYOUT_TCOD );
+    } else 
+    {
+        TCODConsole::setCustomFont( "terminal16x16_gs_ro.png", TCOD_FONT_TYPE_GREYSCALE | TCOD_FONT_LAYOUT_ASCII_INROW );
+    }
+    gui = std::make_shared<Gui>();
 }
 
 Engine::~Engine()
 {
-    actors.clear();
-    delete gui;
+    if( !actors.empty() )
+    {
+        actors.clear();
+    }
 }
 
 void Engine::update() {
 	if ( gameStatus == STARTUP ) map->computeFov();
    	gameStatus=IDLE;
     TCODSystem::checkForEvent(TCOD_EVENT_KEY_PRESS|TCOD_EVENT_MOUSE,&lastKey,&mouse);
+    if( lastKey.vk == TCODK_ESCAPE )
+    {
+        save();
+        load();
+    }
     player -> update( player );
     if ( gameStatus == NEW_TURN ) {
 	    for ( auto &actor : actors ) {

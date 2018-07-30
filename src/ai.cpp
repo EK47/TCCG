@@ -33,14 +33,14 @@ void MonsterAi::update( std::shared_ptr<Actor> owner ) {
 	
 	// If the actor can die, and the monster is dead, stop updating.
 	if ( owner->destructible && owner->destructible->isDead() ) {
-    	return;
-    }
+		return;
+	}
 
-   	// If the creature is in the FOV, the creature stores the player's last seen location
+	// If the creature is in the FOV, the creature stores the player's last seen location
 	if ( engine.map->isInFov(owner->x,owner->y) ) {
-    	lkX = engine.player -> x;
+		lkX = engine.player -> x;
 		lkY = engine.player -> y;
-    }
+	}
 	// If the last known location of the player isn't NULL, moveOrAttack
 	if( lkX != NULL && lkY != NULL )
 	{
@@ -214,7 +214,7 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 	}
 
 	// Allow you to look around using the camera.
-	if( engine.lastKey.shift && engine.lastKey.c == ';' )
+	if( engine.lastKey.c == ';' )
 	{
 		engine.camera -> moveAround();
 	}

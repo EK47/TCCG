@@ -27,7 +27,7 @@ public:
     int cameraWidth, cameraHeight;
     int cameraPosX, cameraPosY;
     int topLeftX, topLeftY;
-    bool lookMode;
+    bool lookMode, mainCamera;
     TCODConsole *cameraConsole;
     Camera( int width, int height, bool mainCamera );
     ~Camera();

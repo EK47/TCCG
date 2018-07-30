@@ -90,6 +90,7 @@ PlayerDestructible::PlayerDestructible(float maxHp, float defense, const char *c
 
 void PlayerDestructible::die( std::shared_ptr<Actor> owner ) {
 	engine.gui->message( badThing, "You died!");
+	owner -> destructible -> hp = 0;
 	Destructible::die(owner);
 	engine.gameStatus=Engine::DEFEAT;
 }
