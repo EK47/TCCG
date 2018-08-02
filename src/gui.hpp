@@ -68,6 +68,7 @@ public:
 protected:
 	TCODConsole *guiConBottom;
 	TCODConsole *guiConRight;
+	TCODConsole *guiBar;
 	struct Message {
 		char *text;
 		TCODColor col;

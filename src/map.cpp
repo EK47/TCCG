@@ -22,11 +22,23 @@
 
 Map::Map( int width, int height ) : width( width ), height( height )
 {
+    seed = 1;
+    rng = new TCODRandom( seed );
     mapConsole = new TCODConsole( width, height );
+    
+    // Lighting stuff
+    lightmask = std::make_shared<LightMask>( width, height );
+    lightmask -> setIntensity( 40.0f );
+    lightmask -> setAmbient( 0.0f );
+
+    for( int i = 0; i < width * height; ++i )
+    {
+        walls.push_back( 1.0f );
+    }
+
     tiles = new Tile[ width * height ];
     map = std::make_shared<TCODMap>( width, height );
     path = std::make_shared<TCODPath>( map.get(), 1.0f );
-    // generateDungeon( 10 );
     TCODBsp bsp( 0, 0, width, height );
     bsp.splitRecursive( NULL, 6, ROOM_MAX_SIZE, ROOM_MIN_SIZE, 1.5f, 1.5f );
     BspListener listener( *this );
@@ -35,22 +47,25 @@ Map::Map( int width, int height ) : width( width ), height( height )
 
 Map::~Map()
 {
+    delete rng;
     delete mapConsole;
     delete [] tiles;
 }
 
-bool Map::isWall(int x, int y) const 
+bool Map::isWall( int x, int y ) const 
 {
-   return !map->isWalkable(x,y);
+   return !( map -> isWalkable( x, y ) && map -> isTransparent( x, y ) );
 }
 
-bool Map::isInFov(int x, int y) const {
+bool Map::isInFov(int x, int y) const
+{
    if( x < 0 || x >= width || y < 0 || y >= height )
    {
        return false;
    }
-   if ( map->isInFov(x,y) ) {
-       tiles[x+y*width].explored=true;
+   if ( map -> isInFov( x, y ) )
+   {
+       tiles[ x + y * width ].explored = true;
        return true;
    }
    return false;
@@ -92,7 +107,6 @@ bool Map::canWalk( int x, int y ) const
 
 void Map::addMonster( int x, int y )
 {
-    TCODRandom *rng = TCODRandom::getInstance();
     int val = rng -> getInt( 0, 100 );
     if( val < 25 )
     {
@@ -133,7 +147,6 @@ void Map::addMonster( int x, int y )
 
 void Map::addItem( int x, int y )
 {
-    TCODRandom *rng = TCODRandom::getInstance();
     int dice = rng -> getInt( 0, 100 );
     if( dice < 40 )
     {
@@ -192,14 +205,16 @@ void Map::dig( int x1, int y1, int x2, int y2 )
         for( int tiley = y1; tiley <= y2; tiley++ )
         {
             map -> setProperties( tilex, tiley, true, true );
+            walls[ tilex + width * tiley ] = 0.0f;
+            tiles[ tilex + width * tiley ].tileChar = 250;
         }
     }
 }
 
 void Map::createRoom( bool first, int x1, int y1, int x2, int y2 )
 {
-    TCODRandom *rng = TCODRandom::getInstance();
     dig( x1, y1, x2, y2 );
+
     if( first )
     {
         engine.player -> x = ( x1 + x2 ) / 2;
@@ -209,8 +224,6 @@ void Map::createRoom( bool first, int x1, int y1, int x2, int y2 )
         int nbMonsters = rng -> getInt( 0, MAX_ROOM_MONSTERS );
         while( nbMonsters > 0 )
         {
-            std::uniform_int_distribution<> xdistr( x1, x2 );
-            std::uniform_int_distribution<> ydistr( y1, y2 );
             int x = rng -> getInt( x1, x2 );
             int y = rng -> getInt( y1, y2 );
             if( canWalk( x, y ) )
@@ -228,91 +241,80 @@ void Map::createRoom( bool first, int x1, int y1, int x2, int y2 )
             if( canWalk( x, y ) )
             {
                 addItem( x, y );
+                walls[ x + width * y ] = 0.3f;
             }
             nbItems--;
         }
     }
-}
 
-void Map::generateDungeon( int nRooms )
-{
-    std::vector<int> roomX;
-    std::vector<int> roomY;
-    std::vector<int> roomWidth;
-    std::vector<int> roomHeight;
-    // Randomly generate rooms
-    std::mt19937 eng( seed );
-    std::uniform_int_distribution<> roomXdistr( 0, width );
-    std::uniform_int_distribution<> roomYdistr( 0, height );
-    std::uniform_int_distribution<> roomHeightdistr( 4, 16 );
-    std::uniform_int_distribution<> roomWidthdistr( 4, 16 );
-    for( int i = 0; i < nRooms; i++ )
-    {
-        roomX.push_back( roomXdistr( eng ) );
-        roomY.push_back( roomYdistr( eng ) );
-        roomWidth.push_back( roomWidthdistr( eng ) );
-        roomHeight.push_back( roomHeightdistr( eng ) );
-    }
-    // Remove any overlapping rooms and any outside of the map.
-    for( int i = 0; i < roomX.size() - 1; i++ )
-    {
-        if( ( roomX[i] >= roomX[ i + 1 ] && roomX[i] <= roomX[ i + 1 ] + roomWidth[ i + 1 ] ) && ( roomY[i] >= roomY[ i + 1 ] && roomY[i] <= roomY[ i + 1 ] + roomHeight[i] )
-        || ( roomX[i] + roomWidth[i] >= roomX[ i + 1 ] && roomX[i] + roomWidth[i] <= roomX[ i + 1 ] + roomWidth[ i + 1 ] ) && ( roomY[i] >= roomY[ i + 1 ] && roomY[i] <= roomY[ i + 1 ] + roomHeight[i] )
-        || ( roomX[i] >= roomX[ i + 1 ] && roomX[i] <= roomX[ i + 1 ] + roomWidth[ i + 1 ] ) && ( roomY[i] + roomHeight[i] >= roomY[ i + 1 ] && roomY[i] + roomHeight[i] <= roomY[ i + 1 ] + roomHeight[i] )
-        || ( roomX[i] + roomWidth[i] >= roomX[ i + 1 ] && roomX[i] + roomWidth[i] <= roomX[ i + 1 ] + roomWidth[ i + 1 ] ) && ( roomY[i] + roomHeight[i] >= roomY[ i + 1 ] && roomY[i] + roomHeight[i] <= roomY[ i + 1 ] + roomHeight[i] )
-        )
-        {
-            roomX.erase( roomX.begin() + i );
-            roomY.erase( roomY.begin() + i );
-            roomWidth.erase( roomWidth.begin() + i );
-            roomHeight.erase( roomHeight.begin() + i );
-        }
-    }
-    // Build and connect rooms.
+    // Adds a light in the center of every room
+    tiles[ ( ( x1 + x2 - 2 ) / 2 ) + width * ( ( y1 + y2 + 2 ) / 2 ) ].tileChar = 156;
 
-    createRoom( true, roomX[0], roomY[0], roomX[0] + roomWidth[0], roomY[0] + roomHeight[0] );
-    for( int i = 1; i < roomX.size(); i++ )
-    {
-        createRoom( false, roomX[i], roomY[i], roomX[i] + roomWidth[i], roomY[i] + roomHeight[i] );
-        // Create a corridor
-        dig( ( roomX[ i - 1 ] + ( roomWidth[ i - 1 ] / 2 ) ), ( roomY[ i - 1 ] + ( roomHeight[ i - 1 ] / 2 ) ), ( roomX[ i ] + ( roomWidth[ i ] / 2 ) ), ( roomY[ i ] + ( roomHeight[ i ] / 2 ) ) );
-
-    }
 }
 
 void Map::render() const
 {
+
+    lightmask -> reset();
+
     for( int x = 0; x < width; x++ )
     {
         for( int y = 0; y < height; y++ )
         {
-            if ( isInFov(x,y) )
+            // Character Setting
+
+            mapConsole -> setChar( x, y, tiles[ x + width * y ].tileChar );
+            
+            // Color setting
+
+            if( isInFov( x, y ) )
             {
-                mapConsole->setCharForeground( x, y, isWall(x,y) ? dungeon1Wall : dungeon1Floor );
-                mapConsole->setCharBackground( x, y, dungeon1Background );
-                if( isWall( x, y ) )
+                switch( tiles[ x + width * y ].tileChar )
                 {
-                    mapConsole -> setChar( x, y, '#' );
-                } else
-                {
-                    mapConsole -> setChar( x, y, 250 );
-                }
+                    case (int)'#':
+                        mapConsole -> setCharForeground( x, y, dungeon1Wall );
+                    break;
+                    case 250:
+                        mapConsole -> setCharForeground( x, y, dungeon1Floor );
+                    break;
+                    case 156:
+                        mapConsole -> setCharForeground( x, y, TCODColor::yellow );
+                    break;
+                    default: break;
+                } 
+
+                mapConsole -> setCharBackground( x, y, dungeon1Background );
                 
-            } else if ( isExplored(x, y) )
+            } else if( isExplored( x, y ) )
             {
-                mapConsole->setCharForeground(x, y, isWall(x,y) ? returnUnseen( dungeon1Wall ) : returnUnseen( dungeon1Floor ) );
+                switch( tiles[ x + width * y ].tileChar )
+                {
+                    case (int)'#':
+                        mapConsole -> setCharForeground( x, y, returnUnseen( dungeon1Wall ) );
+                    break;
+                    case 250:
+                        mapConsole -> setCharForeground( x, y, returnUnseen ( dungeon1Floor ) );
+                    break;
+                    case 156:
+                        mapConsole -> setCharForeground( x, y, returnUnseen( TCODColor::yellow ) );
+                    break;
+                    default: break;
+                } 
+
                 mapConsole->setCharBackground( x, y, returnUnseen( dungeon1Background ) );
-                
-                if( isWall( x, y ) )
-                {
-                    mapConsole -> setChar( x, y, '#' );
-                } else
-                {
-                    mapConsole -> setChar( x, y, 250 );
-                }
+
+            } 
+            
+            if( tiles[ x + width * y ].tileChar == 156 && 
+            ( ( x > engine.camera -> topLeftX - 1.5 * engine.camera -> cameraWidth && x < engine.camera -> topLeftX + 1.5 * engine.camera -> cameraWidth )
+            && ( y > engine.camera -> topLeftY - 1.5 * engine.camera -> cameraHeight && x < engine.camera -> topLeftY + 1.5 * engine.camera -> cameraHeight ) ) ) // Render light if in the camera view.
+            {
+                lightmask -> addLight( x, y, 1.0f );
             }
         }
     }
+
+    lightmask -> computeMask( walls );
 }
 
 
@@ -373,6 +375,7 @@ void Map::dig( int x1, int y1, int x2, int y2 )
 
 void Map::createRoom( bool first, int x1, int y1, int x2, int y2 )
 {
+    TCODRandom *rng = TCODRandom::getInstance();
     dig( x1, y1, x2, y2 );
     if( first )
     {
@@ -380,10 +383,11 @@ void Map::createRoom( bool first, int x1, int y1, int x2, int y2 )
         engine.player -> y = ( y1 + y2 ) / 2;
     } else
     {
-        TCODRandom *rng=TCODRandom::getInstance();
         int nbMonsters = rng -> getInt( 0, MAX_ROOM_MONSTERS );
         while( nbMonsters > 0 )
         {
+            std::uniform_int_distribution<> xdistr( x1, x2 );
+            std::uniform_int_distribution<> ydistr( y1, y2 );
             int x = rng -> getInt( x1, x2 );
             int y = rng -> getInt( y1, y2 );
             if( canWalk( x, y ) )

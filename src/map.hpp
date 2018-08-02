@@ -30,17 +30,21 @@ static const int MAX_ROOM_ITEMS = 2;
 struct Tile 
 {
    bool explored; // has the player already seen this tile ?
-   Tile() : explored(false) {}
+   int tileChar = (char)'#';
+   Tile() : explored( false ) { }
 };
 
 class Map
 {
 public:
     int width, height;
+    unsigned long seed;
+    TCODRandom *rng;
     std::shared_ptr<TCODPath> path;
     std::shared_ptr<TCODMap> map;
     TCODConsole *mapConsole;
-    long seed;
+    std::shared_ptr<LightMask> lightmask;
+    std::vector<float> walls;
     Map( int width, int height );
     ~Map();
     bool isWall( int x, int y ) const;
@@ -56,11 +60,9 @@ public:
 protected:
     Tile *tiles;
     friend class BspListener;
-    void generateDungeon( int nRooms );
     void dig( int x1, int y1, int x2, int y2 );
     void createRoom( bool first, int x1, int y1, int x2, int y2 );
 };
-
 
 class BspListener : public ITCODBspCallback
 {
@@ -76,19 +78,18 @@ public:
     {
         if( node->isLeaf() )
         {
-            int x,y,w,h;
+            int x, y, w, h;
             // dig a room
-            TCODRandom *rng=TCODRandom::getInstance();
-            w=rng->getInt(ROOM_MIN_SIZE, node->w-2);
-            h=rng->getInt(ROOM_MIN_SIZE, node->h-2);
-            x=rng->getInt(node->x+1, node->x+node->w-w-1);
-            y=rng->getInt(node->y+1, node->y+node->h-h-1);
-            map.createRoom(roomNum == 0, x, y, x+w-1, y+h-1);
+            w = map.rng -> getInt( ROOM_MIN_SIZE, node -> w - 2 );
+            h = map.rng -> getInt( ROOM_MIN_SIZE, node -> h - 2 );
+            x = map.rng -> getInt( node -> x + 1, node -> x + node -> w - w - 1 );
+            y = map.rng -> getInt( node -> y + 1, node -> y + node -> h - h - 1 );
+            map.createRoom( roomNum == 0, x, y, x + w - 1, y + h - 1 );
 
             if ( roomNum != 0 ) {
                 // dig a corridor from last room
-                map.dig(lastx,lasty,x+w/2,lasty);
-                map.dig(x+w/2,lasty,x+w/2,y+h/2);
+                map.dig( lastx, lasty, x + w / 2, lasty );
+                map.dig( x + w / 2, lasty, x + w / 2, y + h / 2 );
             }
 
             lastx = x + w / 2;

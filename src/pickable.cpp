@@ -28,6 +28,7 @@ void Pickable::drop( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer
         engine.actors.push_back( owner );
         owner -> x = wearer -> x;
         owner -> y = wearer -> y;
+        engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.3f;
         engine.gui -> message( worldEvents, "%s drops a %s.", wearer -> name, owner -> name );
     }
 }
@@ -42,10 +43,12 @@ bool Pickable::use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer 
     return false;
 }
 
-bool Pickable::pick( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer) {
+bool Pickable::pick( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer ) {
 	if ( wearer->container && wearer->container->add(owner) ) {
 		auto it = find( engine.actors.begin(), engine.actors.end(), owner );
 		engine.actors.erase( it );
+        // For Lighting
+        engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.0f;
         return true;
 	}
 	return false;

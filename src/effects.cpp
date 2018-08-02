@@ -26,13 +26,16 @@ void renderLine( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> target, fl
     // Current x and y;
     int cX = owner -> x - engine.camera -> topLeftX;
     int cY = owner -> y - engine.camera -> topLeftY;
+    // Create a line from the curent to the target. Subtract camera coordinates to get proper map position.
     TCODLine::init( cX, cY, target -> x - engine.camera -> topLeftX, target -> y - engine.camera -> topLeftY );
     do
     {
+        // Get a random integer to cause color change in the line.
         TCODRandom *rng = TCODRandom::getInstance();
         float val = rng -> getInt( 1, 3 );
         val = val * ( 0.2f * multiplier );
         engine.camera -> cameraConsole -> setCharBackground( cX, cY, col * val );
     } while( !TCODLine::step( &cX, &cY ) );
+    
     TCODConsole::flush();
 }

@@ -21,6 +21,7 @@
 #ifndef attacker_hpp
 #define attacker_hpp
 
+// Class for attacking things. Handles how damaging should occur and the text for it.
 class Attacker
 {
 public:

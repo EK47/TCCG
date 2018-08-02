@@ -21,6 +21,7 @@
 #ifndef actor_hpp
 #define actor_hpp
 
+// Everything that is alive, dead, or an item in the game is an actor.
 class Actor
 {
 public:

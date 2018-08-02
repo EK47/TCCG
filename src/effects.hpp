@@ -21,6 +21,8 @@
 #ifndef effects_hpp
 #define effects_hpp
 
+// Effects includes simple things such as one-time particles, beams, and other things that are NOT specific to certain
+// Classes. This should NEVER require a class to manage.
 void renderLine( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> target, float multiplier, const TCODColor &col );
 
 #endif

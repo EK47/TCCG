@@ -25,9 +25,12 @@
 static const int HP_WIDTH = 26;
 static const int MSG_X = 1;
 
-Gui::Gui() {
+Gui::Gui()
+{
+	// Open two new consoles based on some preset REXPaint file I drew.
 	guiConBottom = new TCODConsole( "../assets/gui1.xp" );
 	guiConRight = new TCODConsole( "../assets/gui2.xp" );
+	guiBar = new TCODConsole( "../assets/guisurroundbar.xp" );
 }
 
 Gui::~Gui() {
@@ -42,27 +45,28 @@ void Gui::clear()
 }
 
 void Gui::render() {
-	// clear the GUI consoles
+	// Clear the GUI consoles
 	guiConBottom -> clear();
 	guiConRight -> clear();
 
 	guiConBottom -> loadXp( "../assets/gui1.xp" );
 	guiConRight -> loadXp( "../assets/gui2.xp" );
 
-	// draw the health bar
-	renderBar( 2, 2, HP_WIDTH, 3, "HP", engine.player->destructible->hp,
-		engine.player->destructible->maxHp,
-		TCODColor::lightRed,TCODColor::darkerRed);
+	// Blit the bar around the health bar. Since there are custom characters, draw those individually.
+	TCODConsole::blit( guiBar, 0, 0, 28, 5, guiConRight, 1, 1 );
 
-	// draw the message log
-	int y=1;
-	float colorCoef=0.5f;
+	// Draw the health bar
+	renderBar( 2, 2, HP_WIDTH, 3, "HP", engine.player -> destructible -> hp, engine.player -> destructible -> maxHp, TCODColor::lightRed, TCODColor::darkerRed );
+
+	// Draw the message log
+	int y = 1;
+	float colorCoef = 0.0f;
 	for ( auto &msg : log ) {
-		guiConBottom->setDefaultForeground( msg->col * colorCoef );
-		guiConBottom->print(MSG_X, y, msg->text);
+		guiConBottom -> setDefaultForeground( TCODColor::lerp( guiBackground, msg -> col, colorCoef ) );
+		guiConBottom -> print( MSG_X, y, msg -> text );
 		y++;
 		if ( colorCoef < 1.0f ) {
-			colorCoef+=0.05f;
+			colorCoef += 0.05f;
 		}
 	}
 
@@ -72,59 +76,71 @@ void Gui::render() {
 	{
 		renderLook( engine.camera -> cameraWidth / 2, engine.camera -> cameraHeight / 2 );
 	}
-	// blit the GUI console on the root console
+	// Blit the GUI console on the root console
 	TCODConsole::blit( guiConBottom, 0, 0, engine.camera -> cameraWidth, 25, TCODConsole::root, 0, 75 );
 	TCODConsole::blit( guiConRight, 0, 0, engine.screenWidth - engine.camera -> cameraWidth, engine.screenHeight, TCODConsole::root, engine.camera -> cameraWidth, 0 );
 }
 
-void Gui::renderBar(int x, int y, int width, int height, const char *name,
-	float value, float maxValue, const TCODColor &barColor,
-	const TCODColor &backColor) {
-	// fill the background
-	guiConRight->setDefaultBackground(backColor);
-	guiConRight->rect(x,y,width,height,false,TCOD_BKGND_SET);
+void Gui::renderBar( int x, int y, int width, int height, const char *name, float value, float maxValue, const TCODColor &barColor, const TCODColor &backColor)
+{
+	// Fill the background
+	guiConRight -> setDefaultBackground( backColor );
+	guiConRight -> rect( x, y, width, height, false, TCOD_BKGND_SET );
 
-	int barWidth = (int)(value / maxValue * width);
+	// Get the width of the current red bar based upon values.
+	int barWidth = (int)( ( value / maxValue ) * width );
 	if ( barWidth > 0 ) {
-		// draw the bar
-		guiConRight->setDefaultBackground(barColor);
-		guiConRight->rect(x,y,barWidth,height,false,TCOD_BKGND_SET);
+		// Draw the bar
+		guiConRight -> setDefaultBackground( barColor );
+		guiConRight -> rect( x, y, barWidth, height, false, TCOD_BKGND_SET );
 	}
-	// print text on top of the bar
-	guiConRight->setDefaultForeground(TCODColor::white);
-	guiConRight->printEx(x+width/2,y+height/2,TCOD_BKGND_NONE,TCOD_CENTER,
-		"%s : %g/%g", name, value, maxValue);
+
+	// Print text on top of the bar
+	guiConRight -> setDefaultForeground( TCODColor::white );
+	guiConRight -> printEx( x + width / 2, y + height / 2, TCOD_BKGND_NONE, TCOD_CENTER, "%s : %g/%g", name, value, maxValue );
 }
 
-Gui::Message::Message(const char *text, const TCODColor &col) :
-	text(strdup(text)),col(col) {	
+Gui::Message::Message( const char *text, const TCODColor &col ) : text( strdup( text ) ), col( col )
+{
+
 }
 
-Gui::Message::~Message() {
-	free(text);
+Gui::Message::~Message()
+{
+	free( text );
 }
 
-void Gui::renderMouseLook() {
-	if (! engine.map->isInFov(engine.mouse.cx + engine.camera -> topLeftX, engine.mouse.cy + engine.camera -> topLeftY ) ) {
-		// if mouse is out of fov, nothing to render
-		return;
-	}
-	char buf[256]="";
-	bool first=true;
+void Gui::renderMouseLook()
+{
+	char buf[256] = "";
+	bool first = true;
 	for ( auto &actor : engine.actors ) {
 		// find actors under the mouse cursor
-		if ( actor->x == engine.mouse.cx + engine.camera -> topLeftX && actor->y == engine.mouse.cy + engine.camera -> topLeftY ) {
-			if (! first) {
-				strcat(buf,", ");
+		if ( actor -> x == engine.mouse.cx + engine.camera -> topLeftX && actor -> y == engine.mouse.cy + engine.camera -> topLeftY && engine.map -> isInFov( engine.mouse.cx + engine.camera -> topLeftX, engine.mouse.cy + engine.camera -> topLeftY ) ) {
+			if ( !first ) {
+				strcat( buf, ", " );
 			} else {
-				first=false;
+				first = false;
 			}
-			strcat(buf,actor->name);
+			strcat( buf, actor -> name );
+		} else if( actor -> lastLocationX != NULL && actor -> lastLocationY != NULL )
+		{
+			if( actor -> lastLocationX == engine.mouse.cx + engine.camera -> topLeftX && actor -> lastLocationY == engine.mouse.cy + engine.camera -> topLeftY )
+			{
+				if( !first )
+				{
+					strcat( buf, ", " );
+				} else
+				{
+					first = false;
+				}
+				strcat( buf, actor -> name );
+			}
 		}
 	}
 	// display the list of actors under the mouse cursor
-	guiConRight->setDefaultForeground( worldEvents );
-	guiConRight->print(2,51,buf);
+	guiConRight -> setDefaultForeground( worldEvents );
+	guiConRight -> printRect( 2, 17, 26, 10, buf );
 }
 
 // Renders the area under the current camera cursor
@@ -160,41 +176,40 @@ void Gui::renderLook( int x, int y )
 		}
 	}
 	guiConRight -> setDefaultForeground( worldEvents );
-	guiConRight -> print( 2, 51, buf );
+	guiConRight -> printRect( 2, 17, 26, 10, buf );
 }
 
+// This is an absolute monster. I fear touching it. I don't understand what is happening, so I will just let it happen.
 void Gui::message(const TCODColor &col, const char *text, ...) {
-	// build the text
+
 	va_list ap;
 	char buf[256];
-	va_start(ap,text);
-	vsprintf(buf,text,ap);
-	va_end(ap);
+	va_start( ap, text );
+	vsprintf( buf, text, ap );
+	va_end( ap );
 
-	char *lineBegin=buf;
+	char *lineBegin = buf;
 	char *lineEnd;
 	do {
 		// make room for the new message
 		if ( log.size() == engine.screenHeight - engine.camera -> cameraHeight - 2 ) {
-			log.erase(begin(log));
+			log.erase( begin( log ) );
 		}
 
 		// detect end of the line
-		lineEnd=strchr(lineBegin,'\n');
+		lineEnd = strchr( lineBegin,'\n' );
 		if ( lineEnd ) {
 			*lineEnd='\0';
 		}
 
 		// add a new message to the log
 		std::shared_ptr<Message> msg = std::make_shared<Message>( lineBegin, col );
-		log.push_back(msg);
+		log.push_back( msg );
 
 		// go to next line
-		lineBegin=lineEnd+1;
+		lineBegin = lineEnd + 1;
 	} while ( lineEnd );
 }
-
-	// 77, 57
 
 Menu::Menu()
 {

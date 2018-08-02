@@ -10,7 +10,7 @@ $(TEMP)/%.o : $(SRCDIR)/%.cpp
 $(TEMP)/%.o : $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) -o $@ -c $< 
 
-CPP_OBJS=$(TEMP)/main.o $(TEMP)/actor.o $(TEMP)/map.o $(TEMP)/engine.o $(TEMP)/attacker.o $(TEMP)/ai.o $(TEMP)/destructible.o $(TEMP)/gui.o $(TEMP)/container.o $(TEMP)/pickable.o $(TEMP)/effects.o $(TEMP)/color.o $(TEMP)/camera.o $(TEMO)/savesys.o
+CPP_OBJS=$(TEMP)/main.o $(TEMP)/actor.o $(TEMP)/map.o $(TEMP)/engine.o $(TEMP)/attacker.o $(TEMP)/ai.o $(TEMP)/destructible.o $(TEMP)/gui.o $(TEMP)/container.o $(TEMP)/pickable.o $(TEMP)/effects.o $(TEMP)/color.o $(TEMP)/camera.o $(TEMP)/savesys.o
 
 all : main
 

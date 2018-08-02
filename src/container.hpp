@@ -21,6 +21,7 @@
 #ifndef container_hpp
 #define container_hpp
 
+// Container class for anything that can hold items.
 class Container
 {
 public:

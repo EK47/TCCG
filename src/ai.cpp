@@ -23,6 +23,15 @@
 #include <algorithm>
 #include "main.hpp"
 
+
+
+
+
+
+
+
+//// Monster AI
+
 MonsterAi::MonsterAi() : moveCount(0)
 { }
 
@@ -32,12 +41,12 @@ MonsterAi::~MonsterAi()
 void MonsterAi::update( std::shared_ptr<Actor> owner ) {
 	
 	// If the actor can die, and the monster is dead, stop updating.
-	if ( owner->destructible && owner->destructible->isDead() ) {
+	if ( owner -> destructible && owner -> destructible -> isDead() ) {
 		return;
 	}
 
 	// If the creature is in the FOV, the creature stores the player's last seen location
-	if ( engine.map->isInFov(owner->x,owner->y) ) {
+	if ( engine.map -> isInFov( owner -> x, owner -> y ) ) {
 		lkX = engine.player -> x;
 		lkY = engine.player -> y;
 	}
@@ -47,22 +56,27 @@ void MonsterAi::update( std::shared_ptr<Actor> owner ) {
 		moveOrAttack( owner, lkX, lkY );
 	}
 	// Heal naturally.
-	owner -> destructible -> naturalHeal( owner, owner -> turnSinceFight );
+	owner -> destructible -> naturalHeal( owner );
 }
 
 void MonsterAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int targety )
 {
 	// Compute the path from the current position to the target.
-	engine.map -> path -> compute( owner->x, owner->y, targetx, targety );
+	engine.map -> path -> compute( owner -> x, owner -> y, targetx, targety );
 	// std::cout << owner -> name << ": " << engine.map -> path -> size() << std::endl;
 	int cX, cY, nX, nY;
 	// Get the current X and Y, then the next X and Y
 	engine.map -> path -> getOrigin( &cX, &cY );
 	engine.map -> path -> get( 0, &nX, &nY );
 	// If the creature can walk to the next tile, walk there.
-	if( engine.map->canWalk( nX, nY ) )
+	if( engine.map -> canWalk( nX, nY ) )
 	{
+		// For Lighting
+		engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.0f;
+
 		engine.map -> path -> walk( &(owner -> x), &(owner -> y), true );
+		// For Lighting
+		engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.5f;
 		owner -> turnSinceFight += 1;
 	// If the creature's next tile is the player
 	} else if( engine.player -> x == nX && engine.player -> y == nY && owner -> attacker )
@@ -96,6 +110,16 @@ void MonsterAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int tar
 	}
 	*/
 }
+
+
+
+
+
+
+
+
+
+//// Player AI
 
 void PlayerAi::update( std::shared_ptr<Actor> owner) {
 
@@ -139,9 +163,9 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 		// Wait one turn
 		case '.':
 		{
-			engine.gameStatus = Engine::NEW_TURN;
-			owner -> destructible -> naturalHeal( owner, owner -> turnSinceFight );
+			owner -> destructible -> naturalHeal( owner );
 			owner -> turnSinceFight += 1;
+			engine.gameStatus = Engine::NEW_TURN;
 		}
 		break;
 		// Rest until fully healed
@@ -177,24 +201,28 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
         break;
 		case 'g': // Pickup item
 		{
-			bool found=false;
-			for ( auto &actor : engine.actors ) {
-				if ( actor->pickable && actor->x == owner->x && actor->y == owner->y ) {
-					auto lootname = actor -> name;
-					if (actor->pickable->pick(actor,owner)) {
-						found=true;
-						engine.gui->message( worldEvents,"You pick up the %s.",
-							lootname );
-							engine.gameStatus=Engine::NEW_TURN;
+			bool found = false;
+			for ( auto &actor : engine.actors )
+			{
+				// If the actor is pickable, and the owner of the PlayerAi's coordinates are the same as the item's coordinates
+				if ( actor -> pickable && actor -> x == owner -> x && actor -> y == owner -> y ) {
+					// The name of the item you are picking up
+					auto itemname = actor -> name;
+					// If the player successfully picks the item
+					if ( actor -> pickable -> pick( actor, owner ) )
+					{
+						found = true;
+						engine.gui -> message( worldEvents, "You pick up the %s.", itemname );
+						engine.gameStatus=Engine::NEW_TURN;
 						break;
-					} else if (! found) {
-						found=true;
-						engine.gui->message( guiForeground,"Your inventory is full.");
+					} else if ( !found ) {
+						found = true;
+						engine.gui -> message( guiForeground,"Your inventory is full.");
 					}
 				}
 			}
 			if (!found) {
-				engine.gui->message( worldEvents,"There's nothing here that you can pick up.");
+				engine.gui -> message( worldEvents,"There's nothing here that you can pick up.");
 			}
 		}
 		break;
@@ -222,86 +250,106 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
     if (dx != 0 || dy != 0) {
 		if( !engine.map -> isWall( owner -> x + dx, owner -> y + dy ) )
 		{
-    		if (moveOrAttack(owner, owner->x+dx,owner->y+dy)) {
-    			engine.map->computeFov();
+    		if ( moveOrAttack(owner, owner -> x + dx, owner -> y + dy ) ) 
+			{
+				// Only recalculate the FOV if the next position isn't something the player can attack.
+    			engine.map -> computeFov();
     		}
 			engine.gameStatus = Engine::NEW_TURN;
 		}
 	}
 }
 
-bool PlayerAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx,int targety) {	
-	/*
-	if ( engine.map->isWall(targetx,targety) ) 
-	{
-		return false;
-	}
-	*/
-	// look for living actors to attack
+bool PlayerAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int targety ) {	
 
 	owner -> turnSinceFight += 1;
 
-	for ( auto &actor : engine.actors ) {
-		if ( actor->destructible && !actor->destructible->isDead()
-			 && actor->x == targetx && actor->y == targety ) {
+	for ( auto &actor : engine.actors )
+	{
+		// If the actor can die, is currently alive, and has the position of the target coordinates, the player attacks the actor
+		if ( actor -> destructible && actor -> destructible -> isAlive() && actor -> x == targetx && actor -> y == targety )
+		{
 			owner -> turnSinceFight = 0;
-			owner->attacker->attack(owner, actor);
+			owner -> attacker -> attack( owner, actor );
 			return false;
 		}
 	}
 
-	owner -> destructible -> naturalHeal( owner, owner -> turnSinceFight );
-
-	// look for corpses
+	// Look for all pickable objects under the player, and then display the name.
 	for ( auto &actor : engine.actors )
 	{
-        bool corpseOrItem = ( actor -> destructible && actor -> destructible -> isDead() ) || actor -> pickable;
-		if ( corpseOrItem && actor->x == targetx && actor->y == targety ) {
-			engine.gui->message( worldEvents,"There's a %s here",actor->name);
+        bool item = (bool)actor -> pickable;
+		if ( item && actor -> x == targetx && actor -> y == targety )
+		{
+			engine.gui -> message( worldEvents, "There's a %s here", actor -> name );
 		}
 	}
-	owner->x=targetx;
-	owner->y=targety;
+
+	// For Lighting
+	engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.0f;
+
+	// Update the player coordinates
+	owner -> x = targetx;
+	owner -> y = targety;
+
+	// For Lighting
+	engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.5f;
+
+	// Heal naturally
+	owner -> destructible -> naturalHeal( owner );
+
 	return true;
 }
 
-std::shared_ptr<Actor> PlayerAi::choseFromInventory( std::shared_ptr<Actor> owner) {
+std::shared_ptr<Actor> PlayerAi::choseFromInventory( std::shared_ptr<Actor> owner)
+{
+	// We create a console that is the inventory.
 	static const int INVENTORY_WIDTH=50;
 	static const int INVENTORY_HEIGHT=28;
-	static TCODConsole con(INVENTORY_WIDTH,INVENTORY_HEIGHT);
+	static TCODConsole inventory( INVENTORY_WIDTH, INVENTORY_HEIGHT );
 
-	// display the inventory frame
-	con.setDefaultForeground( guiForeground );
-	con.setDefaultBackground( guiBackground );
-	con.printFrame(0,0,INVENTORY_WIDTH,INVENTORY_HEIGHT,true,
-		TCOD_BKGND_DEFAULT,"Your Inventory");
+	// Set the default foreground and background, and then print the inventory name at the top.
+	inventory.setDefaultForeground( guiForeground );
+	inventory.setDefaultBackground( guiBackground );
+	inventory.printFrame( 0, 0, INVENTORY_WIDTH, INVENTORY_HEIGHT, true, TCOD_BKGND_DEFAULT, "Your Inventory" );
 
-	// display the items with their keyboard shortcut
+	// Display the items with their keyboard shortcut
 	int shortcut='a';
 	int y=1;
-	for ( auto &item : owner -> container -> inventory ) {
-		con.print(2,y,"(%c) %s", shortcut, item->name);
+	for ( auto &item : owner -> container -> inventory )
+	{
+		inventory.print( 2, y, "(%c) : %s", shortcut, item -> name);
 		y++;
 		shortcut++;
 	}
 
-	// blit the inventory console on the root console
-	TCODConsole::blit(&con, 0, 0, INVENTORY_WIDTH,INVENTORY_HEIGHT,
-		TCODConsole::root, engine.screenWidth/2 - INVENTORY_WIDTH/2,
-		engine.screenHeight/2-INVENTORY_HEIGHT/2);
+	// Blit the inventory console on the root console
+	TCODConsole::blit( &inventory, 0, 0, INVENTORY_WIDTH, INVENTORY_HEIGHT, TCODConsole::root, engine.screenWidth / 2 - INVENTORY_WIDTH / 2, engine.screenHeight / 2 - INVENTORY_HEIGHT / 2 );
 	TCODConsole::flush();
 
-	// wait for a key press
+	// Wait for a key press
 	TCOD_key_t key;
-	TCODSystem::waitForEvent(TCOD_EVENT_KEY_PRESS,&key,NULL,true);
-	if ( key.vk == TCODK_CHAR ) {
-		int actorIndex=key.c - 'a';
-		if ( actorIndex >= 0 && actorIndex < owner->container->inventory.size() ) {
-			return owner->container->inventory.at(actorIndex);
+	TCODSystem::waitForEvent( TCOD_EVENT_KEY_PRESS, &key, NULL, true);
+	if ( key.vk == TCODK_CHAR )
+	{
+		// Get the index of the key by subtracting the char values.
+		int actorIndex = key.c - 'a';
+		if ( actorIndex >= 0 && actorIndex < owner -> container -> inventory.size() )
+		{
+			return owner -> container -> inventory.at( actorIndex );
 		}
 	}
 	return NULL;
 }
+
+
+
+
+
+
+
+
+//// Confused AI
 
 ConfusedAi::ConfusedAi( int nbTurns, std::shared_ptr<Ai> oldAi ) : nbTurns( nbTurns ), oldAi( oldAi )
 {
@@ -310,6 +358,7 @@ ConfusedAi::ConfusedAi( int nbTurns, std::shared_ptr<Ai> oldAi ) : nbTurns( nbTu
 
 void ConfusedAi::update( std::shared_ptr<Actor> owner )
 {
+	// This entire thing basically gets random directions and then makes the actor go in that direction.
     TCODRandom *rng = TCODRandom::getInstance();
     int dx = rng -> getInt( -1, 1 );
     int dy = rng -> getInt( -1, 1 );
@@ -319,8 +368,13 @@ void ConfusedAi::update( std::shared_ptr<Actor> owner )
         int desty = owner -> y + dy;
         if( engine.map -> canWalk( destx, desty ) )
         {
+			// For Lighting
+			engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.0f;
+			
             owner -> x = destx;
             owner -> y = desty;
+			// For Lighting
+			engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.5f;
         } else
         {
             std::shared_ptr<Actor> target;
@@ -338,8 +392,18 @@ void ConfusedAi::update( std::shared_ptr<Actor> owner )
     }
 }
 
+
+
+
+
+
+
+
+//// NPC Ai
+
 NPCAi::NPCAi( std::shared_ptr<Actor> owner )
 {
+	// Keep tabs on the spawn point of the creature. The creature only walks in a certain range of the spawn point
 	oX = owner -> x;
 	oY = owner -> y;
 }
@@ -351,10 +415,11 @@ NPCAi::~NPCAi()
 
 void NPCAi::update( std::shared_ptr<Actor> owner )
 {
-	if ( owner->destructible && owner->destructible->isDead() ) {
+	/*if ( owner -> destructible && owner -> destructible -> isDead() )
+	{
     	return;
-    }
-	if( engine.map->isInFov(owner->x,owner->y) )
+    }*/
+	if( engine.map -> isInFov( owner -> x, owner -> y ) )
 	{
 		moveOrTalk( owner );
 	}
@@ -362,20 +427,23 @@ void NPCAi::update( std::shared_ptr<Actor> owner )
 
 void NPCAi::moveOrTalk( std::shared_ptr<Actor> owner )
 {
-	do 
-	{
-		TCODRandom *rng = TCODRandom::getInstance();
-    	xVal = rng -> getInt( oX - 2, oX + 1 );
-		yVal = rng -> getInt( oY - 1, oY + 1 );
-		engine.map -> path -> compute( owner->x, owner->y, xVal, yVal );
-	} while( (xVal == owner -> x && yVal == owner -> y) || !(engine.map -> canWalk( xVal, yVal )) );
+	// Get a random set of coordinates in a certain range of the creature's starting point.
+	TCODRandom *rng = TCODRandom::getInstance();
+    xVal = rng -> getInt( oX - 2, oX + 1 );
+	yVal = rng -> getInt( oY - 1, oY + 1 );
+	engine.map -> path -> compute( owner->x, owner->y, xVal, yVal );
 
 	int nX, nY;
-
+	// Get the next coordinate of the path, and if the creature can go there, do so.
 	engine.map -> path -> get( 0, &nX, &nY );
 	if( engine.map->canWalk( nX, nY ) )
 	{
+		// For Lighting
+		engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.0f;
+
 		engine.map -> path -> walk( &(owner -> x), &(owner -> y), true );
+		// For Lighting
+		engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.5f;
 	}
 
 }

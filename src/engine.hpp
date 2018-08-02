@@ -21,6 +21,8 @@
 #ifndef engine_hpp
 #define engine_hpp
 
+// The game engine. The object that manages all of the going ons
+
 class Engine
 {
 public:

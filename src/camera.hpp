@@ -21,6 +21,8 @@
 #ifndef camera_hpp
 #define camera_hpp
 
+// Camera class as an abstraction layer between the map and the root console. Visual effects, lighting, and other things are
+// applied here.
 class Camera
 {
 public:

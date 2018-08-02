@@ -27,11 +27,13 @@ Container::Container( int size ) : size( size )
 
 Container::~Container()
 {
+    // Clear out the inventory vector
     inventory.clear();
 }
 
 bool Container::add( std::shared_ptr<Actor> actor )
 {
+    // If the size of the container is smaller than the inventory, return false.
     if( size > 0 && inventory.size() >= size )
     {
         return false;

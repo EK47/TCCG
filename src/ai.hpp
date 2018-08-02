@@ -21,6 +21,7 @@
 #ifndef ai_hpp
 #define ai_hpp
 
+// Ai class. A class that is meant to be inherited.
 class Ai
 {
 public:
@@ -29,6 +30,7 @@ public:
     bool seen { false };
 };
 
+// The Player's Ai.
 class PlayerAi : public Ai
 {
 public:
@@ -39,6 +41,7 @@ protected:
     std::shared_ptr<Actor> choseFromInventory( std::shared_ptr<Actor> owner );
 };
 
+// The Ai of any hostile creature.
 class MonsterAi: public Ai
 {
 public:
@@ -52,6 +55,7 @@ protected:
     int moveCount;
 };
 
+// The Ai of any randomly moving creature
 class ConfusedAi : public Ai
 {
 public:
@@ -62,6 +66,7 @@ protected:
     std::shared_ptr<Ai> oldAi;
 };
 
+// The Ai of any peaceful creature
 class NPCAi : public Ai
 {
 public:

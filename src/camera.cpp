@@ -22,6 +22,7 @@
 
 Camera::Camera( int width, int height, bool mainCamera ) : lookMode( false ), mainCamera( mainCamera )
 {
+    // Initialize a new console with specified width and height, and a position on the root console.
     cameraConsole = new TCODConsole( cameraWidth, cameraHeight );
     cameraWidth = width;
     cameraHeight = height;
@@ -39,11 +40,14 @@ Camera::~Camera()
 
 void Camera::playerOutRange()
 {
+    // The camera always has the player in the center.
     topLeftX = engine.player -> x - (int)cameraWidth / 2;
     topLeftY = engine.player -> y - (int)cameraHeight / 2;
     
+
     if( engine.trackPlayer )
     {
+        // The camera is more loose, and keeps the player in a certain proximity to the center.
         topLeftX = std::min( std::max( engine.player -> x - (int)cameraWidth / 2, 0 ), engine.map -> width - cameraWidth );
         topLeftY = std::min( std::max( engine.player -> y - (int)cameraHeight / 2, 0 ), engine.map -> height - cameraHeight ); 
     }
@@ -57,6 +61,7 @@ void Camera::moveAround()
     topLeftY = engine.player -> y - cameraHeight / 2;
     while( lookMode )
     {
+        // Movement directions for the camera. ; to recenter, and ' to leave camera mode.
         TCOD_key_t key = TCODConsole::checkForKeypress( TCOD_KEY_PRESSED );
         switch( key.c )
         {
@@ -78,13 +83,10 @@ void Camera::moveAround()
             default: break;
         }
         TCODConsole::root -> clear();
-        // Blit the map onto the camera
-        TCODConsole::blit( engine.map -> mapConsole, topLeftX, topLeftY, cameraWidth, cameraHeight, cameraConsole, 0, 0 );
-        // Put an X of guiForeground color onto the center of the camera.
-        cameraConsole -> putChar( cameraWidth / 2, cameraHeight / 2, 'x' );
-        cameraConsole -> setCharForeground( cameraWidth / 2, cameraHeight / 2, guiForeground );
-        // Blit the camera onto the root console
-        TCODConsole::blit( cameraConsole, 0, 0, cameraWidth, cameraHeight, TCODConsole::root, cameraPosX, cameraPosY );
+
+        // Render the camera as usual
+        render();
+
         // Render the GUI
         engine.gui -> render();
         // Flush the root console to display all things
@@ -94,10 +96,41 @@ void Camera::moveAround()
 
 void Camera::render()
 {   
-    if( mainCamera )
+    // If this camera is the main one, center on the player.
+    if( mainCamera && !lookMode )
     {
         playerOutRange();
     }
+    
+    // Blit the map onto this camera, and the camera onto the root console.
     TCODConsole::blit( engine.map -> mapConsole, topLeftX, topLeftY, cameraWidth, cameraHeight, cameraConsole, 0, 0 );
+
+    // Camera Processing Effects. Lighting is added here.
+
+    for( int x = 0; x < cameraWidth; ++x )
+    {
+        for( int y = 0; y < cameraHeight; ++y )
+        {
+            TCODColor colorF = engine.map -> mapConsole -> getCharForeground( x + topLeftX, y + topLeftY );
+            TCODColor colorB = engine.map -> mapConsole -> getCharBackground( x + topLeftX, y + topLeftY );
+
+            float brightnessValue = engine.map -> lightmask -> mask[ ( x + topLeftX ) + engine.map -> width * ( y + topLeftY ) ];
+
+            colorF = colorF * ( TCODColor::lightYellow * brightnessValue * 0.5 );
+
+            colorB = colorB * ( TCODColor::lightYellow * brightnessValue );
+
+            cameraConsole -> setCharForeground( x, y, colorF );
+            cameraConsole -> setCharBackground( x, y, colorB );
+        }
+    }
+
+    if( lookMode )
+    {
+        // Put an X of guiForeground color onto the center of the camera.
+        cameraConsole -> putChar( cameraWidth / 2, cameraHeight / 2, 'x' );
+        cameraConsole -> setCharForeground( cameraWidth / 2, cameraHeight / 2, guiForeground );
+    }
+
     TCODConsole::blit( cameraConsole, 0, 0, cameraWidth, cameraHeight, TCODConsole::root, cameraPosX, cameraPosY );
 }
