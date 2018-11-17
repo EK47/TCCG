@@ -96,16 +96,43 @@ void Camera::moveAround()
 
 void Camera::render()
 {   
+    if( engine.gameStatus == engine.GameStatus::NEW_TURN )
+    {
+        // Calculate the light mask.
+        //engine.map -> lightmask -> computeMask( engine.map -> walls );
+    }
+
     // If this camera is the main one, center on the player.
     if( mainCamera && !lookMode )
     {
         playerOutRange();
     }
-    
+
     // Blit the map onto this camera, and the camera onto the root console.
     TCODConsole::blit( engine.map -> mapConsole, topLeftX, topLeftY, cameraWidth, cameraHeight, cameraConsole, 0, 0 );
 
     // Camera Processing Effects. Lighting is added here.
+
+    for( int x = 0; x < cameraWidth; ++x )
+    {
+        for( int y = 0; y < cameraHeight; ++y )
+        {
+            if( !( engine.map -> isInFov( x + topLeftX, y + topLeftY ) ) && engine.map -> isExplored( x + topLeftX, y + topLeftY ) )
+            {
+                TCODColor xyFColor = engine.map -> mapConsole -> getCharForeground( x + topLeftX, y + topLeftY );
+                TCODColor xyBColor = engine.map -> mapConsole -> getCharBackground( x + topLeftX, y + topLeftY );
+
+                xyFColor.scaleHSV( 0.75f, 0.75f );
+                xyBColor.scaleHSV( 0.75f, 0.75f );
+
+                cameraConsole -> setCharForeground( x, y, xyFColor );
+                cameraConsole -> setCharForeground( x, y, xyFColor );
+            }
+        }
+    }
+
+    /*float average = 0;
+    int count = 0;
 
     for( int x = 0; x < cameraWidth; ++x )
     {
@@ -116,14 +143,24 @@ void Camera::render()
 
             float brightnessValue = engine.map -> lightmask -> mask[ ( x + topLeftX ) + engine.map -> width * ( y + topLeftY ) ];
 
-            colorF = colorF * ( TCODColor::lightYellow * brightnessValue * 0.5 );
+            colorF.scaleHSV( 1.0f, brightnessValue );
 
-            colorB = colorB * ( TCODColor::lightYellow * brightnessValue );
+            colorB.scaleHSV( 1.0f, brightnessValue );
 
             cameraConsole -> setCharForeground( x, y, colorF );
             cameraConsole -> setCharBackground( x, y, colorB );
+
+            // This where where FOV changes based upon light level calculation occurs.
+            if( engine.map -> isInFov( x + topLeftX, y + topLeftY ) && engine.player -> getDistance( x + topLeftX, y + topLeftY ) <= engine.FOVRadius )
+            {
+                average += engine.map -> lightmask -> mask[ ( x + topLeftX ) + engine.map -> width * ( y + topLeftY ) ];
+                count++;
+            }
         }
     }
+
+    average /= count;
+    engine.currentFOV = ( average * 30 );*/
 
     if( lookMode )
     {

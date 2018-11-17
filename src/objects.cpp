@@ -20,17 +20,34 @@
 
 #include "main.hpp"
 
-Engine engine( 120, 100 );
-
-int main()
+Door::Door( int x, int y, int ch, const char *name, const TCODColor &col ) : Actor( x, y, ch, name, col )
 {
-    engine.load();
-    while ( !TCODConsole::isWindowClosed() )
+    
+}
+
+Door::~Door()
+{
+
+}
+
+void Door::genericInteraction()
+{
+    if( state == Door::OPEN )
     {
-        engine.update();
-        engine.render();
-        TCODConsole::flush();
+        state = Door::CLOSED;
+        blocks = true;
+        ch = '=';
+        engine.map -> map -> setProperties( x, y, false, false );
+    } else if( state == Door::CLOSED )
+    {
+        state = Door::OPEN;
+        blocks = false;
+        ch = '/';
+        engine.map -> map -> setProperties( x, y, true, true );
     }
-    engine.save();
-    return 0;
+}
+
+int Door::returnInfo()
+{
+    return static_cast<int>( state );
 }

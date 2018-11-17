@@ -30,8 +30,10 @@ public:
     float defense;
     int healTime;
     const char *corpseName;
+    TCODColor corpseColor;
+    char corpseChar;
 
-    Destructible( float maxHp, float defense, const char *corpseName, int healTime = 15 );
+    Destructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar, int healTime = 15 );
     inline bool isDead() { return hp <= 0; }
     inline bool isAlive() { return hp >= 1; }
 
@@ -46,23 +48,30 @@ public:
 class MonsterDestructible : public Destructible 
 {
 public:
-   MonsterDestructible(float maxHp, float defense, const char *corpseName);
-   void die( std::shared_ptr<Actor> owner);
+   MonsterDestructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar );
+   void die( std::shared_ptr<Actor> owner );
 };
 
 // Player death
 class PlayerDestructible : public Destructible 
 {
 public:
-   PlayerDestructible(float maxHp, float defense, const char *corpseName);
-   void die( std::shared_ptr<Actor> owner);
+   PlayerDestructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar );
+   void die( std::shared_ptr<Actor> owner );
 };
 
 // NPC death
-class NPCDestructible: public Destructible
+class NPCDestructible : public Destructible
 {
 public:
-    NPCDestructible( float maxHp, float defense, const char *corpseName );
+    NPCDestructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar );
+    void die( std::shared_ptr<Actor> owner );
+};
+
+class ObjectDestructible : public Destructible
+{
+public:
+    ObjectDestructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar );
     void die( std::shared_ptr<Actor> owner );
 };
 

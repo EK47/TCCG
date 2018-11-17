@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include "main.hpp"
 
-Destructible::Destructible(float maxHp, float defense, const char *corpseName, int healTime ) : maxHp(maxHp), hp(maxHp), defense(defense), corpseName(corpseName), healTime( healTime )
+Destructible::Destructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar, int healTime ) : maxHp(maxHp), hp(maxHp), defense(defense), corpseName(corpseName), corpseColor( col ), corpseChar( corpseChar), healTime( healTime )
 {
 	if( healTime == 0 )
 	{
@@ -66,8 +66,8 @@ void Destructible::naturalHeal( std::shared_ptr<Actor> owner )
 
 void Destructible::die( std::shared_ptr<Actor> owner ) {
 	// Transform the actor into a corpse!
-	owner -> ch = 1;
-	owner -> col = corpse;	
+	owner -> ch = corpseChar;
+	owner -> col = corpseColor;	
 	owner -> name = corpseName;
 	owner -> blocks = false;
 	// Moves item towards the beginning of the actors vector, so creatures are rendered first.
@@ -75,7 +75,7 @@ void Destructible::die( std::shared_ptr<Actor> owner ) {
 	engine.actors.insert( engine.actors.begin(), owner );
 }
 
-MonsterDestructible::MonsterDestructible(float maxHp, float defense, const char *corpseName) : Destructible( maxHp, defense, corpseName )
+MonsterDestructible::MonsterDestructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar ) : Destructible( maxHp, defense, corpseName, col, corpseChar )
 {
 
 }
@@ -86,7 +86,7 @@ void MonsterDestructible::die( std::shared_ptr<Actor> owner ) {
 	Destructible::die( owner );
 }
 
-PlayerDestructible::PlayerDestructible( float maxHp, float defense, const char *corpseName ) : Destructible( maxHp, defense, corpseName )
+PlayerDestructible::PlayerDestructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar ) : Destructible( maxHp, defense, corpseName, col, corpseChar )
 {
 
 }
@@ -96,11 +96,11 @@ void PlayerDestructible::die( std::shared_ptr<Actor> owner )
 	// Display that the player has died, and kill the player.
 	engine.gui -> message( badThing, "You died!" );
 	owner -> destructible -> hp = 0;
-	Destructible::die(owner);
+	Destructible::die( owner );
 	engine.gameStatus=Engine::DEFEAT;
 }
 
-NPCDestructible::NPCDestructible( float maxHp, float defense, const char* corpseName ) : Destructible( maxHp, defense, corpseName )
+NPCDestructible::NPCDestructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar ) : Destructible( maxHp, defense, corpseName, col, corpseChar )
 {
 
 }
@@ -109,5 +109,16 @@ void NPCDestructible::die( std::shared_ptr<Actor> owner )
 {
 	// Kill the NPC
 	engine.gui -> message( worldEvents, "Poor helpless %s died.", owner -> name );
+	Destructible::die( owner );
+}
+
+ObjectDestructible::ObjectDestructible( float maxHp, float defense, const char *corpseName, const TCODColor &col, char corpseChar ) : Destructible( maxHp, defense, corpseName, col, corpseChar )
+{
+
+}
+
+void ObjectDestructible::die( std::shared_ptr<Actor> owner )
+{
+	engine.gui -> message( worldEvents, "The %s breaks into pieces!", owner -> name );
 	Destructible::die( owner );
 }

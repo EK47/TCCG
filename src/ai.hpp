@@ -35,6 +35,7 @@ class PlayerAi : public Ai
 {
 public:
     void update( std::shared_ptr<Actor> owner );
+    bool healing;
 protected:
     bool moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int targety );
     void handleActionKey( std::shared_ptr<Actor> owner, int ascii );
@@ -80,5 +81,7 @@ private:
     int yVal { NULL };
     int oX;
     int oY;
+    int nX;
+    int nY;
 };
 #endif

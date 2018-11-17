@@ -25,7 +25,7 @@ void Engine::adventureInit()
     actors.clear();
     // Creates the player
     player = std::make_shared<Actor>( 1, 1, '@', "Calvin", calvin1 );
-    player -> destructible = std::make_shared<PlayerDestructible>( 30, 2, "Your Corpse" );
+    player -> destructible = std::make_shared<PlayerDestructible>( 30, 2, "Your Corpse", corpse, 1 );
     player -> attacker = std::make_shared<Attacker>( 5 );
     player -> ai = std::make_shared<PlayerAi>();
     player -> container = std::make_shared<Container>( 10 );
@@ -38,7 +38,7 @@ void Engine::restartAdventure()
 {
     actors.clear();
     player = std::make_shared<Actor>( 1, 1, '@', "Calvin", calvin1 );
-    player -> destructible = std::make_shared<PlayerDestructible>( 30, 2, "Your Corpse" );
+    player -> destructible = std::make_shared<PlayerDestructible>( 30, 2, "Your Corpse", corpse, 1 );
     player -> attacker = std::make_shared<Attacker>( 5 );
     player -> ai = std::make_shared<PlayerAi>();
     player -> container = std::make_shared<Container>( 10 );
@@ -101,6 +101,7 @@ void Engine::load()
                 trackPlayer = !trackPlayer;
             } else if( optionItem == Menu::BACK )
             {
+
             }
         } else if( menuItem == Menu::CREDITS )
         {

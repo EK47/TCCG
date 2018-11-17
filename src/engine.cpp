@@ -22,7 +22,7 @@
 
 static const bool FULLSCREEN = false;
 
-Engine::Engine( int screenWidth, int screenHeight ) : gameStatus( STARTUP ), screenWidth( screenWidth ), screenHeight( screenHeight ), FOVRadius( 30 ), trackPlayer( true ), defaultMapSize( 200 )
+Engine::Engine( int screenWidth, int screenHeight ) : gameStatus( STARTUP ), screenWidth( screenWidth ), screenHeight( screenHeight ), FOVRadius( 30 ), currentFOV( FOVRadius ), trackPlayer( true ), defaultMapSize( 200 )
 {
     // Limits FPS as to protect CPU usage
     TCODSystem::setFps( 60 );
@@ -40,7 +40,10 @@ Engine::~Engine()
 
 void Engine::update() {
     // Compute the FOV of the map
-	if ( gameStatus == STARTUP ) map -> computeFov();
+	if( gameStatus == STARTUP )
+    {
+        map -> computeFov();
+    }
 
    	gameStatus = IDLE;
 
@@ -54,8 +57,10 @@ void Engine::update() {
     // Update the player
     player -> update( player );
     // If the game has gone to a new turn, update all living actors that aren't the player
-    if ( gameStatus == NEW_TURN ) {
-	    for ( auto &actor : actors ) {
+    if ( gameStatus == NEW_TURN )
+    {
+	    for ( auto &actor : actors )
+        {
 	        if ( actor -> name != player -> name && actor -> destructible && actor -> ai )
             {
 	            if( actor -> destructible -> isAlive() )

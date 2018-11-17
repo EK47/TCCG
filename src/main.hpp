@@ -22,12 +22,13 @@
 #define main_hpp
 #pragma once
 
-#include <math.h>
 #include <algorithm>
+#include <chrono>
 #include <deque>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <math.h>
 #include <memory>
 #include <queue>
 #include <random>
@@ -36,12 +37,14 @@
 #include <unistd.h>
 #include <unordered_map>
 #include "../include/libtcod/libtcod.hpp"
-#include "../include/LightMask/LightMask.hpp"
+//#include "../include/LightMask/LightMask.hpp"
 #include "../include/cereal/cereal.hpp"
 #include "rarityDict/dangerDictionary.hpp"
 #include "rarityDict/rarityDictionary.hpp"
 #include "color.hpp"
 class Actor;
+class Map;
+#include "lighting/lighting.hpp"
 #include "camera.hpp"
 #include "effects.hpp"
 #include "destructible.hpp"
@@ -51,6 +54,7 @@ class Actor;
 #include "container.hpp"
 #include "gui.hpp"
 #include "actor.hpp"
+#include "objects.hpp"
 #include "map.hpp"
 #include "engine.hpp"
 #include "savesys.hpp"

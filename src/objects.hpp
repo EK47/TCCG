@@ -18,19 +18,20 @@
 
 */
 
-#include "main.hpp"
-
-Engine engine( 120, 100 );
-
-int main()
+class Door : public Actor
 {
-    engine.load();
-    while ( !TCODConsole::isWindowClosed() )
+public:
+    enum State
     {
-        engine.update();
-        engine.render();
-        TCODConsole::flush();
-    }
-    engine.save();
-    return 0;
-}
+        OPEN,
+        CLOSED
+    };
+    
+    Door( int x, int y, int ch, const char *name, const TCODColor &col );
+    ~Door();
+    
+    State state { State::CLOSED };
+
+    void genericInteraction();
+    int returnInfo();
+};

@@ -17,7 +17,7 @@
 //  Dungeon Background:  TCODColor( 20, 20, 20 );
 //  Dungeon Wall:       TCODColor( 50, 140, 50 );
 //  Dungeon Floor:       TCODColor( 60, 60, 60 );
-//
+//  Door:                 TCODColor::darkerSepia;
 //  
 // 
 //

@@ -18,17 +18,7 @@
 
 */
 
-#include <stdio.h>
-#include <math.h>
-#include <algorithm>
 #include "main.hpp"
-
-
-
-
-
-
-
 
 //// Monster AI
 
@@ -71,12 +61,7 @@ void MonsterAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int tar
 	// If the creature can walk to the next tile, walk there.
 	if( engine.map -> canWalk( nX, nY ) )
 	{
-		// For Lighting
-		engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.0f;
-
 		engine.map -> path -> walk( &(owner -> x), &(owner -> y), true );
-		// For Lighting
-		engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.5f;
 		owner -> turnSinceFight += 1;
 	// If the creature's next tile is the player
 	} else if( engine.player -> x == nX && engine.player -> y == nY && owner -> attacker )
@@ -84,6 +69,8 @@ void MonsterAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int tar
 		owner -> attacker -> attack( owner, engine.player );
 		owner -> turnSinceFight = 0;
 	}
+
+	// Old pathfinding. Bolt directly towards the person.
 	/*
 	int dx = targetx - owner->x;
 	int dy = targety - owner->y;
@@ -121,7 +108,7 @@ void MonsterAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int tar
 
 //// Player AI
 
-void PlayerAi::update( std::shared_ptr<Actor> owner) {
+void PlayerAi::update( std::shared_ptr<Actor> owner ) {
 
 	// If the player is dead, stop updating.
 	if ( owner->destructible && owner->destructible->isDead() ) {
@@ -171,21 +158,21 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 		// Rest until fully healed
 		case 't':
 		{
-			// Extremely rudimentary and should be changed soon. Doesn't make time pass, just one turn
 			if( !(engine.map -> EnemyInFov()) )
 			{
 				if( owner -> destructible -> hp == owner -> destructible -> maxHp )
 				{
-					engine.gui -> message( worldEvents, "You are already fully rested!" );
+					engine.gui -> message( worldEvents, "You are fully rested!" );
 				}
-				while( owner -> destructible -> hp < owner -> destructible -> maxHp )
+				if( owner -> destructible -> hp < owner -> destructible -> maxHp )
 				{
+					healing = true;
 					owner -> destructible -> hp += 1;
+					engine.gameStatus = Engine::NEW_TURN; // See code after switch( case )
 				}
-				engine.gameStatus = Engine::NEW_TURN;
 			} else
 			{
-				engine.gui -> message( worldEvents, "You cannot rest: Creatures nearby." );
+				engine.gui -> message( worldEvents, "Creature(s) nearby!" );
 			}
 		}
 		break;
@@ -237,8 +224,45 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 			}
 		}
 		break;
-
+		case 'p': // Take a photo of the map
+		{
+			engine.map -> mapConsole -> saveXp( "TCCGMap.xp", 0 );
+		}
+		break;
+		case 'o': // Open any doors around the player.
+		{
+			for( auto &actor : engine.actors )
+			{
+				if( hypot( owner -> x - actor -> x, owner -> y - actor -> y ) < 2 )
+				{
+					actor -> genericInteraction();
+					engine.map -> computeFov();
+					engine.gameStatus = engine.NEW_TURN;
+				}
+			}
+		}
+		break;
 		default: break;
+	}
+
+	// Allows the player to rest, and still have time pass.
+	if( !(engine.map -> EnemyInFov()) && healing )
+	{
+		if( owner -> destructible -> hp == owner -> destructible -> maxHp )
+		{
+			healing = false;
+			engine.gui -> message( worldEvents, "You are fully rested!" );
+		}
+		if( owner -> destructible -> hp < owner -> destructible -> maxHp )
+		{
+			healing = true;
+			owner -> destructible -> hp += 1;
+			engine.gameStatus = Engine::NEW_TURN;
+		}
+	} else if( engine.map -> EnemyInFov() && healing )
+	{
+		healing = false;
+		engine.gui -> message( worldEvents, "Creature(s) nearby!" );
 	}
 
 	// Allow you to look around using the camera.
@@ -247,22 +271,23 @@ void PlayerAi::update( std::shared_ptr<Actor> owner) {
 		engine.camera -> moveAround();
 	}
 
-    if (dx != 0 || dy != 0) {
-		if( !engine.map -> isWall( owner -> x + dx, owner -> y + dy ) )
+    if (dx != 0 || dy != 0)
+	{
+		if ( moveOrAttack(owner, owner -> x + dx, owner -> y + dy ) ) 
 		{
-    		if ( moveOrAttack(owner, owner -> x + dx, owner -> y + dy ) ) 
-			{
-				// Only recalculate the FOV if the next position isn't something the player can attack.
-    			engine.map -> computeFov();
-    		}
-			engine.gameStatus = Engine::NEW_TURN;
+			// Only recalculate the FOV if the next position isn't something the player can attack.
+			engine.map -> computeFov();
 		}
+		engine.gameStatus = Engine::NEW_TURN;
 	}
 }
 
 bool PlayerAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int targety ) {	
 
 	owner -> turnSinceFight += 1;
+
+	// Heal naturally
+	owner -> destructible -> naturalHeal( owner );
 
 	for ( auto &actor : engine.actors )
 	{
@@ -285,23 +310,18 @@ bool PlayerAi::moveOrAttack( std::shared_ptr<Actor> owner, int targetx, int targ
 		}
 	}
 
-	// For Lighting
-	engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.0f;
-
-	// Update the player coordinates
-	owner -> x = targetx;
-	owner -> y = targety;
-
-	// For Lighting
-	engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.5f;
-
-	// Heal naturally
-	owner -> destructible -> naturalHeal( owner );
+	if( engine.map -> map -> isWalkable( targetx, targety ) )
+	{
+		// Update the player coordinates
+		owner -> x = targetx;
+		owner -> y = targety;
+		return true;
+	}
 
 	return true;
 }
 
-std::shared_ptr<Actor> PlayerAi::choseFromInventory( std::shared_ptr<Actor> owner)
+std::shared_ptr<Actor> PlayerAi::choseFromInventory( std::shared_ptr<Actor> owner )
 {
 	// We create a console that is the inventory.
 	static const int INVENTORY_WIDTH=50;
@@ -368,13 +388,8 @@ void ConfusedAi::update( std::shared_ptr<Actor> owner )
         int desty = owner -> y + dy;
         if( engine.map -> canWalk( destx, desty ) )
         {
-			// For Lighting
-			engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.0f;
-			
             owner -> x = destx;
             owner -> y = desty;
-			// For Lighting
-			engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.5f;
         } else
         {
             std::shared_ptr<Actor> target;
@@ -431,20 +446,8 @@ void NPCAi::moveOrTalk( std::shared_ptr<Actor> owner )
 	TCODRandom *rng = TCODRandom::getInstance();
     xVal = rng -> getInt( oX - 2, oX + 1 );
 	yVal = rng -> getInt( oY - 1, oY + 1 );
-	engine.map -> path -> compute( owner->x, owner->y, xVal, yVal );
+	engine.map -> path -> compute( owner -> x, owner -> y, xVal, yVal );
 
-	int nX, nY;
-	// Get the next coordinate of the path, and if the creature can go there, do so.
-	engine.map -> path -> get( 0, &nX, &nY );
-	if( engine.map->canWalk( nX, nY ) )
-	{
-		// For Lighting
-		engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.0f;
-
-		engine.map -> path -> walk( &(owner -> x), &(owner -> y), true );
-		// For Lighting
-		engine.map -> walls[ owner -> x + engine.map -> width * owner -> y ] = 0.5f;
-	}
-
+	engine.map -> path -> walk( &(owner -> x), &(owner -> y), true );
 }
 

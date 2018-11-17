@@ -40,12 +40,16 @@ float Actor::getDistance( int cx, int cy ) const
 }
 
 // Render the actors character, and last known locations.
-void Actor::render() const {
+void Actor::render() const
+{
     engine.map -> mapConsole -> setChar( lastLocationX, lastLocationY, ch);
     engine.map -> mapConsole -> setCharForeground( lastLocationX, lastLocationY, col);
 }
 
 // Only the AI needs to be updated. The AI essentially handles all activities.
 void Actor::update( std::shared_ptr<Actor> owner ) {
-	if( ai ) ai -> update( owner );
-}
+	if( owner -> ai )
+    {
+        ai -> update( owner );
+    }
+} 

@@ -59,14 +59,14 @@ void Gui::render() {
 	renderBar( 2, 2, HP_WIDTH, 3, "HP", engine.player -> destructible -> hp, engine.player -> destructible -> maxHp, TCODColor::lightRed, TCODColor::darkerRed );
 
 	// Draw the message log
-	int y = 1;
-	float colorCoef = 0.0f;
+	int y = 23;
+	float colorCoef = 1.0f;
 	for ( auto &msg : log ) {
 		guiConBottom -> setDefaultForeground( TCODColor::lerp( guiBackground, msg -> col, colorCoef ) );
 		guiConBottom -> print( MSG_X, y, msg -> text );
-		y++;
-		if ( colorCoef < 1.0f ) {
-			colorCoef += 0.05f;
+		y--;
+		if( colorCoef > 0.0f ) {
+			colorCoef -= 0.001f;
 		}
 	}
 

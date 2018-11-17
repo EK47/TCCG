@@ -27,6 +27,7 @@ public:
     void drop( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer );
     bool pick( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer );
     virtual bool use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer );
+    virtual bool state();
 };
 
 class Healer : public Pickable
@@ -35,6 +36,7 @@ public:
     float amount;
 
     Healer( float amount );
+    bool state();
     bool use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer );
 };
 
@@ -43,6 +45,7 @@ class LightningBolt : public Pickable
 public:
     float range, damage;
     LightningBolt( float range, float damage );
+    bool state();
     bool use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer );
 };
 
@@ -50,6 +53,7 @@ class Fireball : public LightningBolt
 {
 public:
     Fireball( float range, float damage );
+    bool state();
     bool use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer );
 };
 
@@ -59,7 +63,19 @@ public:
     int nbTurns;
     float range;
     Confuser( int nbTurns, float range );
+    bool state();
     bool use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer );
 };
+
+/*class Lamp : public Pickable
+{
+public:
+    Lamp( float brightness );
+    bool use( std::shared_ptr<Actor> owner, std::shared_ptr<Actor> wearer );
+    bool state();
+    bool onOrOff = false;
+    float brightness;
+    int turnsSinceFilled;
+};*/
 
 #endif

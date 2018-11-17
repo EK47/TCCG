@@ -35,12 +35,14 @@ public:
         DEFEAT
     } gameStatus;
     std::vector<std::shared_ptr<Actor>> actors;
+    std::vector<std::shared_ptr<Actor>> objects;
     std::shared_ptr<Actor> player;
     std::shared_ptr<Map> map;
     std::shared_ptr<Camera> camera;
     int screenWidth;
     int screenHeight;
     int FOVRadius;
+    int currentFOV;
     bool trackPlayer;
     std::shared_ptr<Gui> gui;
     TCOD_key_t lastKey;

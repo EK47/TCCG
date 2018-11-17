@@ -33,6 +33,7 @@
     static const TCODColor dungeon1Wall( 50, 140, 50 );
     static const TCODColor dungeon1Floor( 60, 60, 60 );
     static const TCODColor dungeonStairs( TCODColor::sepia );
+    static const TCODColor door( TCODColor::darkerSepia );
 
     static const TCODColor calvin1( TCODColor::lightSepia );
     static const TCODColor orc( TCODColor::desaturatedGreen );
